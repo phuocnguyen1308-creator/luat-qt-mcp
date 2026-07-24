@@ -84,7 +84,7 @@ def _loc(jurisdiction, topic, alias=""):
 def tra_dieu(tu_khoa: str, gioi_han: int = 10, offset: int = 0,
              jurisdiction: str = None, topic: str = None) -> dict:
     """Tìm ĐIỀU luật quốc tế theo từ khóa (full-text). Truy vấn TIẾNG ANH cho kết quả tốt nhất.
-    Lọc tùy chọn: jurisdiction ('EU','UK'...), topic ('privacy','ai','cyber','telecom'...).
+    Lọc tùy chọn: jurisdiction ('EU','UK'...), topic ('privacy','ai','cyber','telecom','uav'...).
     Mỗi kết quả kèm 'diem' (độ liên quan) + doc_id/số điều + ngày hiệu lực & tình trạng.
     Phân trang: gioi_han tối đa 50; offset để lấy trang kế.
     Trả {tong_so, offset, so_tra, con_nua, ket_qua[...]}."""
