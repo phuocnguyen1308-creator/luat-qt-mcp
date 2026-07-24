@@ -8,10 +8,12 @@ from .db import query
 
 # ─────────────────── SỔ TAY TƯ DUY cho MỌI AI dùng connector này ───────────────────
 _HUONG_DAN = """\
-Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có EU (GDPR, AI Act, NIS2,
-Cyber Resilience Act, DSA, DMA, EECC, ePrivacy, LED); đang mở rộng UK/US/Thụy Sĩ/UAE...
-Mỗi điều lấy trực tiếp từ văn bản gốc chính thức (EUR-Lex...), khóa ổn định do cơ quan
-cấp (doc_id = CELEX, article_key = CELEX+eId). LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
+Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
+  • EU (EUR-Lex): GDPR, AI Act, NIS2, Cyber Resilience Act, DSA, DMA, EECC, ePrivacy, LED
+  • Thụy Sĩ (fedlex): FADP (Luật bảo vệ dữ liệu) + Data Protection Ordinance
+đang mở rộng UK/US/UAE... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định
+do cơ quan cấp (EU: doc_id=CELEX; CH: doc_id=ELI 'cc-YYYY-NNN'; article_key=doc_id+eId).
+LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
 
 1. KIỂM NGÀY HIỆU LỰC vs HÔM NAY. Mỗi văn bản có date_in_force + status. Có luật ĐÃ ban
    hành nhưng CHƯA tới ngày áp dụng (vd Cyber Resilience Act hiệu lực 2027-12-11) — chưa
@@ -21,10 +23,12 @@ cấp (doc_id = CELEX, article_key = CELEX+eId). LUÔN suy nghĩ chủ động v
    EU thường có bản HỢP NHẤT riêng đã gộp các lần sửa; với trích dẫn quan trọng, đối chiếu
    bản consolidated trên nguồn chính thức (mở source_url → EUR-Lex).
 
-3. TRA CÙNG NGÔN NGỮ VỚI CORPUS cho kết quả SẮC NHẤT. Kho hiện là tiếng Anh. Model nhúng
+3. TRA CÙNG NGÔN NGỮ VỚI CORPUS cho kết quả SẮC NHẤT. Kho lưu bằng TIẾNG ANH. Model nhúng
    nhỏ (e5-small) YẾU khi hỏi tiếng Việt trên text tiếng Anh — hãy DIỄN ĐẠT CÂU HỎI BẰNG
    THUẬT NGỮ PHÁP LÝ TIẾNG ANH trước khi tim_ngu_nghia (vd 'quyền được xóa dữ liệu' →
    'right to erasure right to be forgotten'). Bạn (AI) song ngữ, tự dịch ý sang tiếng corpus.
+   ⚠ THỤY SĨ: bản tiếng Anh là DỊCH KHÔNG CHÍNH THỨC; văn bản có hiệu lực pháp lý là
+   tiếng Đức/Pháp/Ý. Trích dẫn quan trọng phải dẫn bản DE/FR/IT trên fedlex (source_url).
 
 4. HAI CÁCH TRA: tra_dieu (full-text — chính xác thuật ngữ/số điều, nhanh) và tim_ngu_nghia
    (ngữ nghĩa — cho câu mô tả). Truy vấn đã đúng thuật ngữ tiếng Anh thì tra_dieu thường đủ.
