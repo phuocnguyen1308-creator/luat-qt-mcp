@@ -34,6 +34,10 @@ cấp (doc_id = CELEX, article_key = CELEX+eId). LUÔN suy nghĩ chủ động v
    gọi tên gì. Thiếu một nước trong kho ≠ nước đó không có luật — chỉ là chưa nạp.
 
 6. Trích dẫn LUÔN kèm doc_id (CELEX) + số điều + ngày để người dùng tự kiểm trên nguồn chính thức.
+
+7. HỎI VỀ "CẢNH BÁO / THAY ĐỔI / CẦN CHÚ Ý" pháp lý → GỌI THẲNG xem_canh_bao NGAY, đừng hỏi lại
+   người dùng lĩnh vực nào (tool trả toàn bộ kho: thay đổi gần đây + văn bản sắp áp dụng). Nếu
+   muốn lọc thì tự lọc kết quả theo jurisdiction/topic, không bắt người dùng làm rõ trước.
 """
 
 mcp = FastMCP("luat-qt", instructions=_HUONG_DAN)
