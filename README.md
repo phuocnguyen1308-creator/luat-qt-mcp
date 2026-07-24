@@ -27,6 +27,7 @@ Mỗi điều/văn bản kèm `date_in_force` + `status` để suy luận hiệu
 | `tra_van_ban(tu_khoa?, jurisdiction?, topic?)` | Tìm/liệt kê văn bản |
 | `xem_van_ban(doc_id)` | Metadata văn bản + danh mục điều |
 | `liet_ke(jurisdiction?, topic?)` | Danh mục gọn |
+| `xem_canh_bao(so_ngay?)` | Cảnh báo từ monitor: thay đổi gần đây + văn bản sắp áp dụng + lần giám sát cuối |
 | `thong_ke()` | Tổng quan kho |
 
 Server kèm `instructions` — "sổ tay tư duy hiệu lực & ngôn ngữ" host đưa cho mọi AI mỗi phiên

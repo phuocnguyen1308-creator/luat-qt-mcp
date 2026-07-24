@@ -272,6 +272,33 @@ def thong_ke() -> dict:
 
 
 @mcp.tool()
+def xem_canh_bao(so_ngay: int = 90) -> dict:
+    """Xem CẢNH BÁO pháp lý do monitor định kỳ ghi nhận:
+      (1) thay đổi gần đây — đổi tình trạng (🔴), bản hợp nhất mới (🟡 = toàn văn [GỐC] đã cũ);
+      (2) văn bản SẮP tới ngày áp dụng (canh mốc hiệu lực, vd luật tương lai);
+      (3) lần giám sát gần nhất (biết dữ liệu có mới không).
+    Dùng khi người dùng hỏi 'có gì thay đổi/cần chú ý về pháp lý' hoặc trước khi trích dẫn quan trọng.
+    so_ngay: cửa sổ nhìn lại cho thay đổi đã ghi (mặc định 90)."""
+    so_ngay = max(1, min(int(so_ngay), 365))
+    thay_doi = query("""SELECT to_char(ts,'YYYY-MM-DD') AS ngay, doc_id, loai, muc_do, noi_dung
+                        FROM giam_sat_log
+                        WHERE ts >= now() - (%s || ' days')::interval
+                        ORDER BY ts DESC""", (so_ngay,))
+    sap = query("""SELECT doc_id, title, date_in_force::text AS date_in_force,
+                          (date_in_force - CURRENT_DATE) AS con_ngay, jurisdiction, topic
+                   FROM van_ban_qt
+                   WHERE date_in_force > CURRENT_DATE
+                   ORDER BY date_in_force""")
+    kiem = query("SELECT max(last_checked)::text AS t FROM van_ban_qt")
+    return {"so_thay_doi": len(thay_doi), "thay_doi_gan_day": thay_doi,
+            "sap_toi_ngay_ap_dung": sap,
+            "lan_giam_sat_cuoi": kiem[0]["t"] if kiem else None,
+            "ghi_chu": (f"Không có thay đổi ghi nhận trong {so_ngay} ngày qua."
+                        if not thay_doi else
+                        "🟡 bản hợp nhất mới = toàn văn [GỐC] đã cũ, nên đối chiếu bản consolidated trên EUR-Lex.")}
+
+
+@mcp.tool()
 def liet_ke(jurisdiction: str = None, topic: str = None) -> dict:
     """Danh mục văn bản (gọn) — lọc tùy chọn theo jurisdiction/topic. Kèm ngày hiệu lực + tình trạng."""
     cond, extra = _loc(jurisdiction, topic, "v")
