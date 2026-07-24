@@ -15,8 +15,9 @@ Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
   • Ireland (eISB): Data Protection Act 2018
   • Anh (legislation.gov.uk): DPA 2018 · Data (Use and Access) Act 2025 · PECR 2003
   • Canada (justice laws): PIPEDA · Privacy Act · Telecommunications Act
+  • New Zealand (legislation.govt.nz): Privacy Act 2020 · Telecom Act 2001 · Harmful Digital Comms 2015
 đang mở rộng US/UAE/Úc... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định
-do cơ quan cấp (EU: CELEX; CH/IE: ELI; SG: mã Act; UK: pid CLML; CA: số điều; article_key=doc_id+điều).
+do cơ quan cấp (EU: CELEX; CH/IE: ELI; SG/CA/NZ: số điều; UK: pid CLML; article_key=doc_id+điều).
 LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
 
 1. KIỂM NGÀY HIỆU LỰC vs HÔM NAY. Mỗi văn bản có date_in_force + status. Có luật ĐÃ ban
