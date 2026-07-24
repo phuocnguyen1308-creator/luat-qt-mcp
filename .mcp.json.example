@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "luat-qt": {
+      "command": "uvx",
+      "args": ["--from", "/Users/nguyentrongphuoc/Documents/Claude/Data/luat-qt-mcp", "luat-qt-mcp"],
+      "env": {
+        "PGHOST": "100.85.147.69",
+        "PGDATABASE": "luatqt_db",
+        "PGUSER": "luatqt_ro",
+        "PGPASSWORD": "doi_thanh_mat_khau_chi_doc",
+        "E5_URL": "http://100.85.147.69:8899"
+      }
+    }
+  }
+}
