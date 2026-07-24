@@ -11,8 +11,9 @@ _HUONG_DAN = """\
 Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
   • EU (EUR-Lex): GDPR, AI Act, NIS2, Cyber Resilience Act, DSA, DMA, EECC, ePrivacy, LED
   • Thụy Sĩ (fedlex): FADP (Luật bảo vệ dữ liệu) + Data Protection Ordinance
+  • Singapore (SSO): PDPA (Personal Data Protection Act 2012)
 đang mở rộng UK/US/UAE... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định
-do cơ quan cấp (EU: doc_id=CELEX; CH: doc_id=ELI 'cc-YYYY-NNN'; article_key=doc_id+eId).
+do cơ quan cấp (EU: CELEX; CH: ELI 'cc-YYYY-NNN'; SG: 'PDPA2012'; article_key=doc_id+điều).
 LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
 
 1. KIỂM NGÀY HIỆU LỰC vs HÔM NAY. Mỗi văn bản có date_in_force + status. Có luật ĐÃ ban
