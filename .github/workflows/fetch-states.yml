@@ -1,16 +1,21 @@
 # Tải luật BANG Mỹ bằng runner đặt TẠI MỸ.
 # Lý do: nhiều cổng lập pháp bang chặn truy cập từ ngoài nước Mỹ; máy ở VN không lấy được.
-# Chạy: tab Actions trên GitHub → "Tải luật bang Mỹ" → Run workflow.
+#
+# ⚠ NGUYÊN TẮC DỮ LIỆU: repo/Mac KHÔNG lưu dữ liệu — chỉ là đường trung chuyển.
+# File thô đi lên ARTIFACT (tự hết hạn sau 7 ngày), rồi được nạp vào Pi (bảng raw_file).
+# Trước đây workflow commit thẳng vào repo; đã bỏ để repo không phình và không giữ data.
+#
+# Chạy: tab Actions → "Tải luật bang Mỹ" → Run workflow.
 name: Tải luật bang Mỹ
 
 on:
-  workflow_dispatch:        # bấm nút chạy tay
+  workflow_dispatch:
   push:
     paths:
-      - 'tools/fetch_states.py'   # sửa danh sách nguồn là tự chạy lại
+      - 'tools/fetch_states.py'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   fetch:
@@ -30,14 +35,10 @@ jobs:
       - name: Tải luật bang
         run: python tools/fetch_states.py
 
-      - name: Commit file thô
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add state_raw
-          if git diff --staged --quiet; then
-            echo "Không có gì thay đổi."
-          else
-            git commit -m "state_raw: tải luật bang Mỹ qua runner US"
-            git push
-          fi
+      - name: Đóng gói file thô thành artifact (KHÔNG commit vào repo)
+        uses: actions/upload-artifact@v4
+        with:
+          name: state-raw
+          path: state_raw/
+          retention-days: 7
+          if-no-files-found: error

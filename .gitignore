@@ -6,3 +6,6 @@ dist/
 build/
 .venv/
 .DS_Store
+
+# Dữ liệu thô KHÔNG lưu trong repo — chỉ trung chuyển qua artifact rồi nạp vào Pi
+state_raw/
