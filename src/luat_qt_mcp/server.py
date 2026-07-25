@@ -24,14 +24,16 @@ Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
   • UAE 3 tầng: LIÊN BANG 'AE' = PDPL (Nghị định-luật 45/2021) — ⚠ TIẾNG Ả RẬP (bản chính thức
     duy nhất) · free zone tài chính 'AE-ADGM' = ADGM DP Regulations 2021, 'AE-DIFC' = DIFC DP
     Law 5/2020 — tiếng Anh, ✅ BẢN HỢP NHẤT
-  • Mỹ – LUẬT BANG (14/20 bang có luật privacy toàn diện): 'US-CA' California CCPA/CPRA ·
+  • Mỹ – LUẬT BANG (18/20 bang có luật privacy toàn diện): 'US-CA' California CCPA/CPRA ·
     'US-VA' Virginia CDPA · 'US-CO' Colorado Privacy Act · 'US-CT' Connecticut CTDPA ·
     'US-TX' Texas DPSA · 'US-OR' Oregon Consumer Privacy Act · 'US-NJ' New Jersey DPA ·
     'US-TN' Tennessee TIPA · 'US-FL' Florida Digital Bill of Rights · 'US-MT' Montana CDPA ·
     'US-NH' New Hampshire DPA · 'US-RI' Rhode Island DTPPA · 'US-DE' Delaware DPDPA ·
-    'US-IA' Iowa CDPA
-    ⚠ CHƯA có 6 bang: UT, IN, MN, NE, KY, MD. Thiếu ≠ bang đó không có luật — nói rõ giới hạn.
-    ⚠ RI hiệu lực 01/01/2026, TN 01/07/2025 — luôn đối chiếu date_in_force với hôm nay.
+    'US-IA' Iowa CDPA · 'US-MN' Minnesota CDPA · 'US-MD' Maryland MODPA ·
+    'US-NE' Nebraska DPA · 'US-UT' Utah UCPA
+    ⚠ CHƯA có 2 bang: KY (Kentucky), IN (Indiana). Thiếu ≠ bang đó không có luật.
+    ⚠ Kiểm date_in_force với hôm nay: RI 01/01/2026 · MD 01/10/2025 · TN 01/07/2025 ·
+      MN 31/07/2025 — có luật vừa mới áp dụng.
   • Mỹ – LIÊN BANG, 3 TẦNG (jurisdiction='US'), lọc bằng doc_type:
       - doc_type='act' — 20 đạo luật (U.S. Code): CFAA · ECPA Wiretap + Stored Communications ·
         Privacy Act 1974 · FOIA · HIPAA · FCRA · FERPA · FISA · Pen/Trap · DPPA · COPPA ·
