@@ -24,7 +24,11 @@ Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
   • UAE 3 tầng: LIÊN BANG 'AE' = PDPL (Nghị định-luật 45/2021) — ⚠ TIẾNG Ả RẬP (bản chính thức
     duy nhất) · free zone tài chính 'AE-ADGM' = ADGM DP Regulations 2021, 'AE-DIFC' = DIFC DP
     Law 5/2020 — tiếng Anh, ✅ BẢN HỢP NHẤT
-  • Mỹ – California (leginfo): CCPA/CPRA (Consumer Privacy Act)
+  • Mỹ – LUẬT BANG (7/20 bang có luật privacy toàn diện): 'US-CA' California CCPA/CPRA ·
+    'US-VA' Virginia CDPA · 'US-TX' Texas DPSA · 'US-FL' Florida Digital Bill of Rights ·
+    'US-MT' Montana CDPA · 'US-DE' Delaware DPDPA · 'US-IA' Iowa CDPA
+    ⚠ CHƯA có 13 bang: CO, CT, UT, OR, TN, IN, MN, NE, NH, NJ, KY, RI, MD (cổng bang chặn
+    truy cập từ ngoài Mỹ). Thiếu ≠ bang đó không có luật.
   • Mỹ – LIÊN BANG, 3 TẦNG (jurisdiction='US'), lọc bằng doc_type:
       - doc_type='act' — 20 đạo luật (U.S. Code): CFAA · ECPA Wiretap + Stored Communications ·
         Privacy Act 1974 · FOIA · HIPAA · FCRA · FERPA · FISA · Pen/Trap · DPPA · COPPA ·
