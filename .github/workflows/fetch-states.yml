@@ -12,7 +12,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'tools/fetch_states.py'
+      - 'tools/**'          # mọi script tải, không riêng fetch_states
+                            # (sửa fetch_indiana.py mà lọc theo fetch_states thì không chạy)
 
 permissions:
   contents: read
