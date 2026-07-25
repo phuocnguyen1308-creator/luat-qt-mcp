@@ -131,6 +131,33 @@ def main():
     json.dump(nav, open(os.path.join(OUT, "IN_nav.json"), "w"), ensure_ascii=False, indent=1)
     print(f"  → đã lưu IN_nav.json (cấu trúc link thật) · dùng {GOC_OK or 'KHÔNG TÌM RA'}")
 
+    # ── PHƯƠNG ÁN CUỐI: render TRANG DỰ LUẬT để lấy link PDF luật đã ban hành ──
+    # Duyệt Bộ luật là ngõ cụt: nội dung dựng bằng React Router, không có href để lần theo.
+    # Nhưng IC 24-15 do SEA 5 (2023) tạo ra; trang dự luật có nút tải PDF — trước đây mọi
+    # URL PDF đoán mò đều trả vỏ, giờ SPA boot được (đã sửa UA) nên link thật sẽ hiện ra.
+    if not res["rows"]:
+        for u in ["https://iga.in.gov/legislative/2023/bills/senate/5",
+                  "https://iga.in.gov/legislative/2023/bills/senate/5/details",
+                  "https://iga.in.gov/laws/2023/acts/senate/5"]:
+            print(f"· thử trang dự luật {u}")
+            b, links = mo(u)
+            pdfs = [l for l in links if ".pdf" in l[1].lower()]
+            print(f"    body {len(b)} · {len(pdfs)} link PDF: {[p[1][:60] for p in pdfs[:4]]}")
+            for ten, href in pdfs[:6]:
+                full = href if href.startswith("http") else "https://iga.in.gov" + href
+                try:
+                    import urllib.request
+                    req = urllib.request.Request(full, headers={"User-Agent": UA})
+                    data = urllib.request.urlopen(req, timeout=60).read()
+                    if data[:4] == b"%PDF" and len(data) > 20000:
+                        nm = "IN_" + re.sub(r"\W+", "_", ten or "bill")[:24] + ".pdf"
+                        open(os.path.join(OUT, nm), "wb").write(data)
+                        print(f"    ✔ lưu {nm} ({len(data):,}B)")
+                except Exception as e:
+                    print(f"    (tải hỏng: {type(e).__name__})")
+            if pdfs:
+                break
+
     # ⚠ LƯU DOM ĐÃ RENDER: lần trước chỉ nhận được '[]' mà không biết trang có nội dung hay
     #   không (log job cần đăng nhập mới xem được). Giữ lại HTML + text để soi ngoại tuyến,
     #   khỏi phải đoán — đúng nguyên tắc "dò trước, đoán sau".
