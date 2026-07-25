@@ -62,20 +62,54 @@ def main():
     os.makedirs(OUT, exist_ok=True)
 
     # ── KENTUCKY — CDPA (KRS 367.3611 et seq.) ──
-    # ⚠ Đợt trước đoán chapter id=38940 → hoá ra là KRS 351 (Mỏ). Trang danh mục cho biết
-    #   CHAPTER 367 CONSUMER PROTECTION = id 39092. Mỗi mục trả về PDF.
+    # ⚠ KRS 367 (Consumer Protection) là chương RẤT LỚN (hàng trăm mục). Tải hết rồi lọc
+    #   là sai lầm: chạy hơn 20 phút. Cách đúng — DÒ NHỊ PHÂN: id sắp theo thứ tự số mục,
+    #   nên chỉ cần thăm dò thưa để tìm dải id ứng với 367.36xx rồi tải đúng dải đó.
+    import io, subprocess, tempfile
+
+    def so_muc(data):
+        """Đọc số hiệu KRS từ PDF một mục (vd '367.3611')."""
+        if data[:4] != b"%PDF":
+            return None
+        with tempfile.TemporaryDirectory() as td:
+            f = os.path.join(td, "a.pdf"); open(f, "wb").write(data)
+            subprocess.run(["pdftotext", "-enc", "UTF-8", f, td + "/a.txt"], check=False)
+            t = open(td + "/a.txt", encoding="utf-8", errors="replace").read(300)
+        m = re.search(r"\b(367\.\d+)\b", t)
+        return float(m.group(1)) if m else None
+
     ky = grab("KY_367_real", "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092",
               ref="https://apps.legislature.ky.gov/law/statutes/")
     if ky:
-        ids = sorted(set(re.findall(r'statute\.aspx\?id=(\d+)', ky.decode("utf-8", "replace"))), key=int)
-        print(f"     → {len(ids)} mục trong KRS 367 (lọc 367.36xx ở khâu parse)")
+        ids = sorted(set(re.findall(r'statute\.aspx\?id=(\d+)',
+                                   ky.decode("utf-8", "replace"))), key=int)
+        print(f"     → chương có {len(ids)} mục; dò thưa để tìm dải 367.36xx")
+        BASE = "https://apps.legislature.ky.gov/law/statutes/statute.aspx?id="
+        REF = "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092"
+        mau = {}
+        buoc = max(1, len(ids) // 25)                 # ~25 lượt thăm dò
+        for k in range(0, len(ids), buoc):
+            d = get(BASE + ids[k], ref=REF)
+            n = so_muc(d)
+            if n:
+                mau[k] = n
+            print(f"        mẫu[{k}] id={ids[k]} → {n}")
+            time.sleep(0.15)
+        # vị trí đầu tiên có số ≥ 367.36 và cuối cùng < 367.37
+        trong = [k for k, v in mau.items() if 367.36 <= v < 367.37]
+        if trong:
+            lo = max(0, min(trong) - buoc)
+            hi = min(len(ids), max(trong) + buoc + 1)
+        else:                                         # không trúng mẫu → lấy quanh chỗ gần nhất
+            gan = min(mau, key=lambda k: abs(mau[k] - 367.36)) if mau else 0
+            lo, hi = max(0, gan - buoc), min(len(ids), gan + 2 * buoc)
+        print(f"     → tải dải id[{lo}:{hi}] ({hi-lo} mục)")
         ok = 0
-        for i in ids:
-            if grab(f"KY367_{i}", f"https://apps.legislature.ky.gov/law/statutes/statute.aspx?id={i}",
-                    ref="https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092", im=True):
+        for i in ids[lo:hi]:
+            if grab(f"KY367_{i}", BASE + i, ref=REF, im=True):
                 ok += 1
             time.sleep(0.15)
-        print(f"     → tải được {ok}/{len(ids)}")
+        print(f"     → tải được {ok}/{hi-lo}")
 
     # (UT xong bằng PDF dự luật SB 227; IN chuyển sang headless trên Pi — in_pi_load.py)
 
