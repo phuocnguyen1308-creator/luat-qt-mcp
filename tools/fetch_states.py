@@ -61,51 +61,23 @@ def grab(name, url, ref=None, im=False):
 def main():
     os.makedirs(OUT, exist_ok=True)
 
-    # ── KENTUCKY — CDPA = HB 15 khoá 2024 (KRS 367.3611 et seq.) ──
-    print("KY: dự luật đã ban hành khoá 2024 + tra đúng chương KRS 367")
-    for lab, u in [("KY24_HB15", "https://apps.legislature.ky.gov/recorddocuments/bill/24RS/hb15/bill.pdf"),
-                   ("KY24_HB15_enr", "https://apps.legislature.ky.gov/recorddocuments/bill/24RS/hb15/orig_bill.pdf"),
-                   ("KY24_HB15_alt", "https://apps.legislature.ky.gov/record/24rs/hb15.html")]:
-        d = grab(lab, u, ref="https://apps.legislature.ky.gov/")
-        if d and d[:4] == b"%PDF" and len(d) > 20000:
-            break
-    # tìm đúng id chương 367 bằng cách quét trang danh mục chương
-    idx = grab("KY_chapters", "https://apps.legislature.ky.gov/law/statutes/", ref="https://apps.legislature.ky.gov/")
-    if idx:
-        html = idx.decode("utf-8", "replace")
-        # dòng nào ghi 'Chapter 367' thì lấy id kèm theo
-        m = re.search(r'chapter\.aspx\?id=(\d+)[^>]*>\s*367\b', html, re.I) or \
-            re.search(r'>\s*367\b[^<]*</a>', html)
-        print("     KY chương 367 →", m.group(0)[:60] if m else "KHÔNG THẤY (xem KY_chapters.html)")
-        if m and m.lastindex:
-            grab("KY_367_real", f"https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id={m.group(1)}",
-                 ref="https://apps.legislature.ky.gov/law/statutes/")
+    # ── KENTUCKY — CDPA (KRS 367.3611 et seq.) ──
+    # ⚠ Đợt trước đoán chapter id=38940 → hoá ra là KRS 351 (Mỏ). Trang danh mục cho biết
+    #   CHAPTER 367 CONSUMER PROTECTION = id 39092. Mỗi mục trả về PDF.
+    ky = grab("KY_367_real", "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092",
+              ref="https://apps.legislature.ky.gov/law/statutes/")
+    if ky:
+        ids = sorted(set(re.findall(r'statute\.aspx\?id=(\d+)', ky.decode("utf-8", "replace"))), key=int)
+        print(f"     → {len(ids)} mục trong KRS 367 (lọc 367.36xx ở khâu parse)")
+        ok = 0
+        for i in ids:
+            if grab(f"KY367_{i}", f"https://apps.legislature.ky.gov/law/statutes/statute.aspx?id={i}",
+                    ref="https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092", im=True):
+                ok += 1
+            time.sleep(0.15)
+        print(f"     → tải được {ok}/{len(ids)}")
 
-    # ── UTAH — UCPA (13-61): thử bản in + tham số phiên bản + dự luật gốc ──
-    print("UT: bản in / tham số phiên bản / dự luật SB 227 (2022)")
-    ver = None
-    ut_idx = grab("UT_idx2", "https://le.utah.gov/xcode/Title13/Chapter61/13-61.html")
-    if ut_idx:
-        mv = re.search(r"(C13-61_\d+)", ut_idx.decode("utf-8", "replace"))
-        ver = mv.group(1) if mv else None
-        print("     chuỗi phiên bản:", ver)
-    for lab, u in [("UT_print", "https://le.utah.gov/xcode/Title13/Chapter61/13-61.html?print=on"),
-                   ("UT_S101_v", f"https://le.utah.gov/xcode/Title13/Chapter61/13-61-S101.html?v={ver}_13-61-S101" if ver else None),
-                   ("UT_S101_plain", "https://le.utah.gov/xcode/Title13/Chapter61/13-61-S101.html?v=C13-61-S101_2022050420220504"),
-                   ("UT_SB227", "https://le.utah.gov/~2022/bills/static/SB0227.pdf"),
-                   ("UT_SB227_htm", "https://le.utah.gov/~2022/bills/sbillenr/SB0227.pdf")]:
-        if u:
-            grab(lab, u, ref="https://le.utah.gov/xcode/Title13/Chapter61/13-61.html")
-
-    # ── INDIANA — IC 24-15: thử site lưu trữ + bản in ──
-    print("IN: archive.iga.in.gov + bản in")
-    for lab, u in [("IN_arch1", "https://archive.iga.in.gov/2024/ic/titles/024#24-15"),
-                   ("IN_arch2", "https://archive.iga.in.gov/2023/ic/titles/024"),
-                   ("IN_arch3", "https://archive.iga.in.gov/static-documents/2/4/-/1/24-1-5/ic-24-15.pdf"),
-                   ("IN_print", "https://iga.in.gov/laws/2025/ic/titles/24/articles/15?print=true"),
-                   ("IN_SEA5_24", "https://iga.in.gov/pdf-documents/123/2023/senate/bills/SB0005/SB0005.06.ENRS.pdf"),
-                   ("IN_leg", "https://iga.in.gov/legislative/2023/bills/senate/5/details")]:
-        grab(lab, u, ref="https://iga.in.gov/")
+    # (UT xong bằng PDF dự luật SB 227; IN chuyển sang headless trên Pi — in_pi_load.py)
 
     json.dump(LOG, open(os.path.join(OUT, "_log_actions.json"), "w"), ensure_ascii=False, indent=1)
     ok = sum(1 for x in LOG if x["ok"])
