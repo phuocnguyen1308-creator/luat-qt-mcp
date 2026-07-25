@@ -1,0 +1,43 @@
+# Tải luật BANG Mỹ bằng runner đặt TẠI MỸ.
+# Lý do: nhiều cổng lập pháp bang chặn truy cập từ ngoài nước Mỹ; máy ở VN không lấy được.
+# Chạy: tab Actions trên GitHub → "Tải luật bang Mỹ" → Run workflow.
+name: Tải luật bang Mỹ
+
+on:
+  workflow_dispatch:        # bấm nút chạy tay
+  push:
+    paths:
+      - 'tools/fetch_states.py'   # sửa danh sách nguồn là tự chạy lại
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest    # runner của GitHub đặt ở Mỹ
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Kiểm tra runner đang ở nước nào
+        run: |
+          echo "IP: $(curl -s https://api.ipify.org)"
+          echo "Quốc gia: $(curl -s https://ipinfo.io/country)"
+
+      - name: Tải luật bang
+        run: python tools/fetch_states.py
+
+      - name: Commit file thô
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state_raw
+          if git diff --staged --quiet; then
+            echo "Không có gì thay đổi."
+          else
+            git commit -m "state_raw: tải luật bang Mỹ qua runner US"
+            git push
+          fi
