@@ -70,6 +70,19 @@ def main():
     res = d.execute_script(TRICH_JS)
     print(f"  body {n} ký tự · {len(res['rows'])} điều · {len(res['links'])} chapter")
 
+    # ⚠ LƯU DOM ĐÃ RENDER: lần trước chỉ nhận được '[]' mà không biết trang có nội dung hay
+    #   không (log job cần đăng nhập mới xem được). Giữ lại HTML + text để soi ngoại tuyến,
+    #   khỏi phải đoán — đúng nguyên tắc "dò trước, đoán sau".
+    try:
+        open(os.path.join(OUT, "IN_rendered.html"), "w", encoding="utf-8").write(d.page_source)
+        body = d.execute_script("return document.body ? document.body.innerText : ''")
+        open(os.path.join(OUT, "IN_body.txt"), "w", encoding="utf-8").write(body or "")
+        print(f"  đã lưu IN_rendered.html ({len(d.page_source):,}) + IN_body.txt ({len(body or ''):,})")
+        print("  --- 400 ký tự đầu của body ---")
+        print("  ", (body or "")[:400].replace("\n", " | "))
+    except Exception as e:
+        print(f"  (không lưu được DOM: {type(e).__name__})")
+
     rows = list(res["rows"])
     hrefs, seen = [], set()
     for h in res["links"]:
