@@ -68,13 +68,19 @@ def main():
     import io, subprocess, tempfile
 
     def so_muc(data):
-        """Đọc số hiệu KRS từ PDF một mục (vd '367.3611')."""
+        """Đọc số hiệu KRS từ PDF một mục (vd '367.3611'). None nếu không đọc được."""
         if data[:4] != b"%PDF":
             return None
-        with tempfile.TemporaryDirectory() as td:
-            f = os.path.join(td, "a.pdf"); open(f, "wb").write(data)
-            subprocess.run(["pdftotext", "-enc", "UTF-8", f, td + "/a.txt"], check=False)
-            t = open(td + "/a.txt", encoding="utf-8", errors="replace").read(300)
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                f = os.path.join(td, "a.pdf"); open(f, "wb").write(data)
+                subprocess.run(["pdftotext", "-enc", "UTF-8", f, td + "/a.txt"], check=False)
+                t = open(td + "/a.txt", encoding="utf-8", errors="replace").read(300)
+        except FileNotFoundError:
+            print("     ⚠ máy không có pdftotext — không dò được số mục")
+            return None
+        except Exception:
+            return None
         m = re.search(r"\b(367\.\d+)\b", t)
         return float(m.group(1)) if m else None
 

@@ -32,8 +32,14 @@ jobs:
           echo "IP: $(curl -s https://api.ipify.org)"
           echo "Quốc gia: $(curl -s https://ipinfo.io/country)"
 
+      # pdftotext KHÔNG có sẵn trên ubuntu-latest — thiếu nó là fetch_states chết ngay
+      # (subprocess ném FileNotFoundError, check=False không cứu được).
+      - name: Cài poppler-utils (pdftotext)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+
       - name: Tải luật bang
         run: python tools/fetch_states.py
+        continue-on-error: true      # một bang hỏng không được chặn các bang còn lại
 
       # Indiana chặn ở TẦNG TÀI NGUYÊN: xin file JS từ ngoài Mỹ thì server trả HTML,
       # nên headless trên Pi vô ích. Phải render bằng trình duyệt ĐẶT TẠI MỸ.
