@@ -8,13 +8,15 @@ Máy ở Việt Nam (sandbox / Pi / Mac) đều không lấy được; runner Gi
 ⚠ DỮ LIỆU KHÔNG LƯU TRONG REPO: workflow đóng gói state_raw/ thành artifact (7 ngày),
    sau đó nạp vào Pi (bảng luatqt_db.raw_file). Repo/Mac chỉ là đường trung chuyển.
 
-ĐỢT 2 — vá theo đúng cấu trúc thật đã soi được từ file đợt 1:
-  • UT: trang chương là JS, nhưng nhúng tên file TOÀN CHƯƠNG 'C13-61_<version>.html' → bóc ra tải.
-  • NE: trang chương có link từng mục '/laws/statutes.php?statute=87-11NN' → crawl (bỏ &print).
-  • RI: link mục là '.htm' CHỮ THƯỜNG (đợt 1 regex viết hoa nên trượt).
-  • KY/IN/TN: cổng tra cứu là SPA → dùng PDF DỰ LUẬT ĐÃ BAN HÀNH (tĩnh).
-  • CT: máy chủ lỗi chuỗi chứng chỉ → tắt verify RIÊNG cho host này.
-  • NH/MN/MD: thử các biến thể đường dẫn (đợt 1 đoán sai).
+ĐỢT 3 — chỉ còn 4 bang, mỗi bang một cách:
+  • KY: trang chương chỉ có link 'statute.aspx?id=NNNNN' (số hiệu KRS do JS render)
+        → tải HẾT rồi lọc sau ở khâu parse.
+  • UT: file "toàn chương" là vỏ rỗng → duyệt URL TỪNG MỤC '13-61-S{n}.html'.
+  • NE: trang mục nạp JS, nhưng có biến thể '&print=true' — thử bản in.
+  • IN: cổng là SPA, mọi PDF dự luật đều trả trang lỗi → TẢI CẢ BUNDLE JS để soi
+        endpoint API (cách đã hiệu quả với UAE và Maryland: dò trước, đoán sau).
+
+(4 bang đã xong ở đợt trước: CT, NH, RI, TN — không tải lại.)
 """
 import urllib.request, ssl, os, re, json, time
 
@@ -22,7 +24,7 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
 CTX = ssl.create_default_context()
-CTX_NOVERIFY = ssl._create_unverified_context()      # chỉ dùng cho host lỗi chuỗi chứng chỉ
+LOG = []
 
 
 def H(ref=None):
@@ -34,32 +36,30 @@ def H(ref=None):
     return h
 
 
-def get(url, ref=None, timeout=45, noverify=False):
-    ctx = CTX_NOVERIFY if noverify else CTX
+def get(url, ref=None, timeout=40):
     with urllib.request.urlopen(urllib.request.Request(url, headers=H(ref)),
-                                timeout=timeout, context=ctx) as r:
+                                timeout=timeout, context=CTX) as r:
         return r.read()
 
 
 def save(name, data):
-    kind = ".pdf" if data[:4] == b"%PDF" else ".html"
-    p = os.path.join(OUT, name + kind)
-    open(p, "wb").write(data)
+    kind = ".pdf" if data[:4] == b"%PDF" else (".js" if name.endswith("_js") else ".html")
+    open(os.path.join(OUT, name + kind), "wb").write(data)
     return len(data), kind
 
 
-LOG = []
-
-
-def grab(name, url, ref=None, noverify=False):
+def grab(name, url, ref=None, im=False):
+    """im=True: chỉ ghi log gọn (dùng khi tải hàng chục trang con)."""
     try:
-        data = get(url, ref=ref, noverify=noverify)
+        data = get(url, ref=ref)
         n, kind = save(name, data)
-        print(f"OK   {name:22} {n:>9,}B {kind}")
+        if not im:
+            print(f"OK   {name:24} {n:>9,}B {kind}")
         LOG.append({"name": name, "url": url, "bytes": n, "ok": True})
         return data
     except Exception as e:
-        print(f"LỖI  {name:22} {type(e).__name__}: {str(e)[:60]}")
+        if not im:
+            print(f"LỖI  {name:24} {type(e).__name__}: {str(e)[:55]}")
         LOG.append({"name": name, "url": url, "ok": False, "err": f"{type(e).__name__}: {e}"})
         return None
 
@@ -67,77 +67,58 @@ def grab(name, url, ref=None, noverify=False):
 def main():
     os.makedirs(OUT, exist_ok=True)
 
-    # ── CONNECTICUT — CTDPA (Conn. Gen. Stat. ch. 743jj) — lỗi chuỗi chứng chỉ ──
-    grab("CT_chap743jj", "https://www.cga.ct.gov/current/pub/chap_743jj.htm", noverify=True)
+    # ── KENTUCKY — KRS 367.3611 et seq. (Consumer Data Protection Act) ──
+    ky_idx = grab("KY_367_idx", "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=38940")
+    if ky_idx:
+        ids = sorted(set(re.findall(r'statute\.aspx\?id=(\d+)', ky_idx.decode("utf-8", "replace"))),
+                     key=int)
+        print(f"     → {len(ids)} mục KY (tải hết, lọc 367.36xx ở khâu parse)")
+        ok = 0
+        for i in ids:
+            if grab(f"KY_sec_{i}", f"https://apps.legislature.ky.gov/law/statutes/statute.aspx?id={i}",
+                    ref="https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=38940", im=True):
+                ok += 1
+            time.sleep(0.15)
+        print(f"     → tải được {ok}/{len(ids)}")
 
-    # ── UTAH — UCPA (Utah Code ch. 13-61): lấy FILE TOÀN CHƯƠNG từ tên nhúng trong trang ──
-    idx = grab("UT_13-61_idx", "https://le.utah.gov/xcode/Title13/Chapter61/13-61.html")
-    if idx:
-        m = re.search(r"(C13-61_\d+\.html)", idx.decode("utf-8", "replace"))
-        if m:
-            grab("UT_13-61_full",
-                 f"https://le.utah.gov/xcode/Title13/Chapter61/{m.group(1)}",
-                 ref="https://le.utah.gov/xcode/Title13/Chapter61/13-61.html")
-        else:
-            print("     ⚠ không thấy tên file toàn chương trong UT index")
+    # ── UTAH — UCPA (Utah Code 13-61): duyệt URL từng mục ──
+    print("UT: duyệt URL từng mục 13-61-S{n}.html")
+    ut_ok = 0
+    for phan in (1, 2, 3, 4, 5):
+        for so in range(1, 12):
+            n = phan * 100 + so
+            d = grab(f"UT_sec_{n}", f"https://le.utah.gov/xcode/Title13/Chapter61/13-61-S{n}.html",
+                     ref="https://le.utah.gov/xcode/Title13/Chapter61/13-61.html", im=True)
+            if d and len(d) > 4000:          # trang thật ~10KB, trang lỗi nhỏ hơn nhiều
+                ut_ok += 1
+            time.sleep(0.15)
+    print(f"     → {ut_ok} mục UT có nội dung")
 
-    # ── RHODE ISLAND — RIDTPA (R.I.G.L. ch. 6-48.1): link '.htm' chữ thường ──
-    ri_base = "http://webserver.rilegislature.gov/Statutes/TITLE6/6-48.1/"
-    ri = grab("RI_6-48.1_idx", ri_base + "INDEX.htm")
-    if ri:
-        hrefs = sorted(set(re.findall(r'href="(6-48\.1-\d+\.htm)"', ri.decode("utf-8", "replace"), re.I)))
-        print(f"     → {len(hrefs)} mục RI")
-        for h in hrefs:
-            grab(f"RI_sub_{h.split('-')[-1].split('.')[0]}", ri_base + h, ref=ri_base + "INDEX.htm")
-            time.sleep(0.2)
+    # ── NEBRASKA — Data Privacy Act (Neb. Rev. Stat. 87-1101 et seq.): thử bản IN ──
+    print("NE: thử biến thể &print=true")
+    ne_ok = 0
+    for n in range(1101, 1131):
+        d = grab(f"NE_print_87-{n}", f"https://nebraskalegislature.gov/laws/statutes.php?statute=87-{n}&print=true",
+                 ref="https://nebraskalegislature.gov/laws/browse-chapters.php?chapter=87", im=True)
+        if d and len(d) > 3000:
+            ne_ok += 1
+        time.sleep(0.15)
+    print(f"     → {ne_ok} mục NE tải được (kiểm nội dung ở khâu parse)")
 
-    # ── NEBRASKA — Data Privacy Act (Neb. Rev. Stat. 87-1101 et seq.) ──
-    ne = grab("NE_chap87", "https://nebraskalegislature.gov/laws/browse-chapters.php?chapter=87")
-    if ne:
-        nums = sorted(set(re.findall(r"statute=(87-11\d\d)", ne.decode("utf-8", "replace"))))
-        print(f"     → {len(nums)} mục NE")
-        for n in nums:
-            grab(f"NE_sec_{n}", f"https://nebraskalegislature.gov/laws/statutes.php?statute={n}",
-                 ref="https://nebraskalegislature.gov/laws/browse-chapters.php?chapter=87")
-            time.sleep(0.2)
-
-    # ── NEW HAMPSHIRE — NH RSA 507-H: thử các biến thể đường dẫn ──
-    for lab, u in [("NH_v1", "https://www.gencourt.state.nh.us/rsa/html/LII/507-H/507-H-mrg.htm"),
-                   ("NH_v2", "https://www.gencourt.state.nh.us/rsa/html/L/507-H/507-H-mrg.htm"),
-                   ("NH_v3", "https://www.gencourt.state.nh.us/rsa/html/NHTOC/NHTOC-LII-507-H.htm")]:
-        if grab(lab, u, ref="https://www.gencourt.state.nh.us/rsa/html/indexes/default.html"):
-            break
-
-    # ── MINNESOTA — CDPA là chương 325O (đợt 1 mọi URL đều 404) ──
-    for lab, u in [("MN_v1", "https://www.revisor.mn.gov/statutes/cite/325O/"),
-                   ("MN_v2", "https://www.revisor.mn.gov/statutes/2025/cite/325O/"),
-                   ("MN_v3", "https://www.revisor.mn.gov/statutes/cite/325O.01/"),
-                   ("MN_v4", "https://www.revisor.mn.gov/statutes/part/325O.01")]:
-        if grab(lab, u, ref="https://www.revisor.mn.gov/statutes/"):
-            break
-
-    # ── MARYLAND — MODPA (Md. Code Com. Law 14-4601): trang web nạp ajax → thử PDF ──
-    for lab, u in [("MD_pdf1", "https://mgaleg.maryland.gov/2025RS/Statute_Web/gcl/14-4601.pdf"),
-                   ("MD_pdf2", "https://mgaleg.maryland.gov/2024RS/Statute_Web/gcl/14-4601.pdf"),
-                   ("MD_bill", "https://mgaleg.maryland.gov/2024RS/bills/sb/sb0541T.pdf")]:
-        if grab(lab, u, ref="https://mgaleg.maryland.gov/"):
-            break
-
-    # ── KENTUCKY / INDIANA / TENNESSEE — cổng SPA → PDF dự luật đã ban hành ──
-    grab("KY_HB15", "https://apps.legislature.ky.gov/recorddocuments/bill/22RS/hb15/bill.pdf",
-         ref="https://apps.legislature.ky.gov/")
-    for lab, u in [("IN_SB5_a", "https://iga.in.gov/pdf-documents/123/2023/senate/bills/SB0005/SB0005.06.ENRS.pdf"),
-                   ("IN_SB5_b", "https://iga.in.gov/publications/enrolled-acts/2023/senate/5"),
-                   ("IN_SB5_c", "https://iga.in.gov/static-documents/e/9/1/a/e91a1b4c/SB0005.06.ENRS.pdf")]:
-        d = grab(lab, u, ref="https://iga.in.gov/")
-        if d and d[:4] == b"%PDF":
-            break
-    for lab, u in [("TN_SB73", "https://www.capitol.tn.gov/Bills/113/Bill/SB0073.pdf"),
-                   ("TN_HB1181", "https://www.capitol.tn.gov/Bills/113/Bill/HB1181.pdf"),
-                   ("TN_SB73_amend", "https://www.capitol.tn.gov/Bills/113/Amend/SA0273.pdf")]:
-        d = grab(lab, u, ref="https://www.capitol.tn.gov/")
-        if d and d[:4] == b"%PDF":
-            break
+    # ── INDIANA — IC 24-15: cổng SPA → tải shell + BUNDLE JS để soi endpoint API ──
+    print("IN: tải shell + bundle JS để dò API")
+    shell = grab("IN_shell", "https://iga.in.gov/laws/2025/ic/titles/24/articles/15")
+    if shell:
+        html = shell.decode("utf-8", "replace")
+        srcs = sorted(set(re.findall(r'src="([^"]+\.js)"', html)))[:6]
+        print(f"     → {len(srcs)} bundle JS")
+        for k, s in enumerate(srcs):
+            u = s if s.startswith("http") else "https://iga.in.gov" + (s if s.startswith("/") else "/" + s)
+            grab(f"IN_bundle{k}_js", u, ref="https://iga.in.gov/", im=True)
+    for lab, u in [("IN_api1", "https://api.iga.in.gov/2025/ic/24/15"),
+                   ("IN_api2", "https://iga.in.gov/api/laws/2025/ic/titles/24/articles/15"),
+                   ("IN_api3", "https://iga.in.gov/laws/2025/ic/titles/24/articles/15/chapters")]:
+        grab(lab, u, ref="https://iga.in.gov/")
 
     json.dump(LOG, open(os.path.join(OUT, "_log_actions.json"), "w"), ensure_ascii=False, indent=1)
     ok = sum(1 for x in LOG if x["ok"])
