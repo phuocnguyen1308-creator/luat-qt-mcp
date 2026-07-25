@@ -35,6 +35,15 @@ jobs:
       - name: Tải luật bang
         run: python tools/fetch_states.py
 
+      # Indiana chặn ở TẦNG TÀI NGUYÊN: xin file JS từ ngoài Mỹ thì server trả HTML,
+      # nên headless trên Pi vô ích. Phải render bằng trình duyệt ĐẶT TẠI MỸ.
+      - name: Cài selenium (cho Indiana)
+        run: pip install --quiet selenium
+
+      - name: Indiana — render SPA bằng headless Chrome
+        run: python tools/fetch_indiana.py
+        continue-on-error: true
+
       - name: Đóng gói file thô thành artifact (KHÔNG commit vào repo)
         uses: actions/upload-artifact@v4
         with:
