@@ -25,8 +25,15 @@ Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
     duy nhất) · free zone tài chính 'AE-ADGM' = ADGM DP Regulations 2021, 'AE-DIFC' = DIFC DP
     Law 5/2020 — tiếng Anh, ✅ BẢN HỢP NHẤT
   • Mỹ – California (leginfo): CCPA/CPRA (Consumer Privacy Act)
-  • Mỹ – LIÊN BANG (U.S. Code, govinfo): CFAA §1030 (cyber) · ECPA Wiretap + Stored Communications
-    (privacy) · COPPA · GLBA-Privacy · CAN-SPAM · CPNI §222 · TCPA §227 · CDA §230 (telecom)
+  • Mỹ – LIÊN BANG, 3 TẦNG (jurisdiction='US'), lọc bằng doc_type:
+      - doc_type='act' — 20 đạo luật (U.S. Code): CFAA · ECPA Wiretap + Stored Communications ·
+        Privacy Act 1974 · FOIA · HIPAA · FCRA · FERPA · FISA · Pen/Trap · DPPA · COPPA ·
+        GLBA-Privacy · CAN-SPAM · CPNI · TCPA · CDA 230 · FISMA · CALEA
+      - doc_type='regulation' — QUY ĐỊNH (eCFR, ✅bản hợp nhất): COPPA Rule 16 CFR 312 ·
+        GLBA Safeguards 16 CFR 314 · HIPAA Rules 45 CFR 164 · DOJ Bulk Data 28 CFR 202 ·
+        FCC 47 CFR 64
+      - doc_type='executive_order' — SẮC LỆNH: EO 14117 (dữ liệu nhạy cảm ra nước ngoài) ·
+        14086 (tình báo tín hiệu, nền EU-US DPF) · 14179 + 14365 (AI)
 đang mở rộng UAE/Pháp... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định do cơ quan cấp
 (EU: CELEX; CH/IE: ELI; SG/CA/NZ/AU/DE: số điều; UK: pid CLML; US: bang=số mục Code, LB=Title+§; article_key=doc_id+điều).
 Chủ đề gồm cả UAV/Drone (EU/AU/CA/SG/UK) ngoài privacy/ai/cyber/telecom.
@@ -66,10 +73,19 @@ LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
    'انتهاك البيانات' vi phạm dữ liệu). Lưu ý PDF gốc bị lỗi rời chữ nhẹ khi trích (ví dụ
    'الإبلاغ' có thể thành 'اإلبالغ') — vector vẫn khớp tốt, nhưng khi TRÍCH DẪN nguyên văn cho
    người dùng thì nên đối chiếu source_url.
-   ⚠ MỸ phân mảnh: KHÔNG có luật privacy LIÊN BANG toàn diện. Ở cấp liên bang chỉ có luật
-   chuyên đề (CFAA, ECPA, COPPA, GLBA, CAN-SPAM...); luật privacy tổng quát nằm ở cấp BANG —
-   jurisdiction='US-CA' là California (CCPA/CPRA, chuẩn thực tế), 'US' là liên bang. Khi user
-   hỏi "luật bảo vệ dữ liệu của Mỹ", nêu rõ sự phân mảnh này, đừng ngầm coi có một đạo luật chung.
+   ⚠ MỸ phân mảnh — KHÔNG có luật privacy LIÊN BANG toàn diện. Khi user hỏi "luật bảo vệ dữ liệu
+   của Mỹ", nêu rõ sự phân mảnh, đừng ngầm coi có một đạo luật chung. Ba điều PHẢI nhớ:
+   (a) NGHĨA VỤ TUÂN THỦ THỰC TẾ thường nằm ở QUY ĐỊNH (doc_type='regulation'), không phải luật
+       gốc. Hỏi "phải làm gì để tuân thủ COPPA/HIPAA" → trả lời từ 16 CFR 312 / 45 CFR 164, rồi
+       mới dẫn luật gốc. Trả lời chỉ bằng U.S. Code là THIẾU phần hành động cụ thể.
+   (b) TẦNG SẮC LỆNH (doc_type='executive_order') đổi theo nhiệm kỳ và đang là nơi biến động
+       mạnh nhất — luôn kiểm date_document. Vd EO 14110 (AI, Biden) đã bị bãi bỏ và thay bằng
+       EO 14179 (2025); EO 14365 (12/2025) hạn chế luật AI cấp bang. Kho chỉ giữ EO còn hiệu lực.
+   (c) LUẬT BANG mới là nơi có luật privacy tổng quát. Kho hiện CHỈ có California ('US-CA',
+       CCPA/CPRA) trong khi thực tế đã có ~20 bang. Thiếu một bang trong kho ≠ bang đó không có
+       luật — phải nói rõ giới hạn này thay vì kết luận.
+   (d) Kho CHƯA có ÁN LỆ Mỹ (Carpenter, Van Buren, Riley, TransUnion...). Với câu hỏi mà kết quả
+       phụ thuộc cách tòa giải thích luật, hãy cảnh báo là còn thiếu tầng án lệ.
 
 6. Trích dẫn LUÔN kèm doc_id (CELEX) + số điều + ngày để người dùng tự kiểm trên nguồn chính thức.
 
