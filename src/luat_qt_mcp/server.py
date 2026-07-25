@@ -17,8 +17,9 @@ Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
   • Canada (justice laws): PIPEDA · Privacy Act · Telecommunications Act
   • New Zealand (legislation.govt.nz): Privacy Act 2020 · Telecom Act 2001 · Harmful Digital Comms 2015
   • Úc (legislation.gov.au): Privacy Act 1988 · Online Safety Act 2021 · Critical Infrastructure 2018
-  • Đức (gesetze-im-internet.de): BDSG · TTDSG · TKG — ⚠ TIẾNG ĐỨC (chính thức)
-đang mở rộng US/UAE... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định
+  • Đức (gesetze-im-internet.de): BDSG · TTDSG · TKG · BSIG · DDG · NetzDG · LuftVO — ⚠ TIẾNG ĐỨC
+  • Tây Ban Nha (BOE): LOPDGDD · LSSI — ⚠ TIẾNG TÂY BAN NHA (chính thức)
+đang mở rộng US/UAE/Pháp... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định
 do cơ quan cấp (EU: CELEX; CH/IE: ELI; SG/CA/NZ/AU/DE: số điều; UK: pid CLML; article_key=doc_id+điều).
 Chủ đề gồm cả UAV/Drone (EU/AU/CA/SG/UK) ngoài privacy/ai/cyber/telecom.
 LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
@@ -37,9 +38,10 @@ LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
    'right to erasure right to be forgotten'). Bạn (AI) song ngữ, tự dịch ý sang tiếng corpus.
    ⚠ THỤY SĨ: bản tiếng Anh là DỊCH KHÔNG CHÍNH THỨC; văn bản có hiệu lực pháp lý là
    tiếng Đức/Pháp/Ý. Trích dẫn quan trọng phải dẫn bản DE/FR/IT trên fedlex (source_url).
-   ⚠ ĐỨC (jurisdiction='DE'): lưu bằng TIẾNG ĐỨC (chính thức, không có bản EN). Tra sắc nhất
-   bằng thuật ngữ pháp lý tiếng Đức (vd 'Auskunftsrecht', 'personenbezogene Daten'); hỏi
-   Anh/Việt thì tự dịch ý sang tiếng Đức trước khi tim_ngu_nghia.
+   ⚠ ĐỨC (DE) / TÂY BAN NHA (ES): lưu bằng TIẾNG ĐỨC / TIẾNG TÂY BAN NHA (chính thức, không có
+   bản EN). Tra sắc nhất bằng thuật ngữ pháp lý đúng tiếng đó (DE: 'Auskunftsrecht',
+   'personenbezogene Daten'; ES: 'datos personales', 'derecho de acceso'); hỏi Anh/Việt thì tự
+   dịch ý sang tiếng corpus trước khi tim_ngu_nghia.
 
 4. HAI CÁCH TRA: tra_dieu (full-text — chính xác thuật ngữ/số điều, nhanh) và tim_ngu_nghia
    (ngữ nghĩa — cho câu mô tả). Truy vấn đã đúng thuật ngữ tiếng Anh thì tra_dieu thường đủ.
