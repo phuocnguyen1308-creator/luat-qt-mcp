@@ -20,8 +20,15 @@ Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
   • Đức (gesetze-im-internet.de): BDSG · TTDSG · TKG · BSIG · DDG · NetzDG · LuftVO — ⚠ TIẾNG ĐỨC
   • Tây Ban Nha (BOE): LOPDGDD · LSSI — ⚠ TIẾNG TÂY BAN NHA
   • Chile (leychile/BCN): Ley 19.628 (vida privada) — ⚠ TIẾNG TÂY BAN NHA
-đang mở rộng Mỹ Latinh/US/UAE/Pháp... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định
-do cơ quan cấp (EU: CELEX; CH/IE: ELI; SG/CA/NZ/AU/DE: số điều; UK: pid CLML; article_key=doc_id+điều).
+  • Brazil (planalto): LGPD (Lei 13.709/2018) · Marco Civil da Internet — ⚠ TIẾNG BỒ ĐÀO NHA
+  • UAE 3 tầng: LIÊN BANG 'AE' = PDPL (Nghị định-luật 45/2021) — ⚠ TIẾNG Ả RẬP (bản chính thức
+    duy nhất) · free zone tài chính 'AE-ADGM' = ADGM DP Regulations 2021, 'AE-DIFC' = DIFC DP
+    Law 5/2020 — tiếng Anh, ✅ BẢN HỢP NHẤT
+  • Mỹ – California (leginfo): CCPA/CPRA (Consumer Privacy Act)
+  • Mỹ – LIÊN BANG (U.S. Code, govinfo): CFAA §1030 (cyber) · ECPA Wiretap + Stored Communications
+    (privacy) · COPPA · GLBA-Privacy · CAN-SPAM · CPNI §222 · TCPA §227 · CDA §230 (telecom)
+đang mở rộng UAE/Pháp... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định do cơ quan cấp
+(EU: CELEX; CH/IE: ELI; SG/CA/NZ/AU/DE: số điều; UK: pid CLML; US: bang=số mục Code, LB=Title+§; article_key=doc_id+điều).
 Chủ đề gồm cả UAV/Drone (EU/AU/CA/SG/UK) ngoài privacy/ai/cyber/telecom.
 LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
 
@@ -50,6 +57,19 @@ LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
 5. XUYÊN QUỐC GIA: cùng khái niệm mỗi hệ một thuật ngữ ('personal data' EU ↔ 'personal
    information' US). Khi so sánh nhiều nước, lọc theo jurisdiction/topic và nêu rõ mỗi bên
    gọi tên gì. Thiếu một nước trong kho ≠ nước đó không có luật — chỉ là chưa nạp.
+   ⚠ UAE phân tầng — PHẢI nói rõ đang dẫn tầng nào: 'AE' = PDPL LIÊN BANG (áp dụng toàn UAE,
+   trừ free zone có luật riêng); 'AE-ADGM'/'AE-DIFC' = hai free zone tài chính, mỗi zone là hệ
+   pháp luật riêng kiểu common law, KHÔNG áp dụng cho phần còn lại của UAE. Đừng dùng ADGM/DIFC
+   để trả lời câu hỏi về "luật UAE" nói chung.
+   ⚠ PDPL lưu bằng TIẾNG Ả RẬP (bản chính thức duy nhất — u.ae không phát hành bản EN). Tra sắc
+   nhất bằng thuật ngữ Ả Rập ('البيانات الشخصية' dữ liệu cá nhân, 'المتحكم' bên kiểm soát,
+   'انتهاك البيانات' vi phạm dữ liệu). Lưu ý PDF gốc bị lỗi rời chữ nhẹ khi trích (ví dụ
+   'الإبلاغ' có thể thành 'اإلبالغ') — vector vẫn khớp tốt, nhưng khi TRÍCH DẪN nguyên văn cho
+   người dùng thì nên đối chiếu source_url.
+   ⚠ MỸ phân mảnh: KHÔNG có luật privacy LIÊN BANG toàn diện. Ở cấp liên bang chỉ có luật
+   chuyên đề (CFAA, ECPA, COPPA, GLBA, CAN-SPAM...); luật privacy tổng quát nằm ở cấp BANG —
+   jurisdiction='US-CA' là California (CCPA/CPRA, chuẩn thực tế), 'US' là liên bang. Khi user
+   hỏi "luật bảo vệ dữ liệu của Mỹ", nêu rõ sự phân mảnh này, đừng ngầm coi có một đạo luật chung.
 
 6. Trích dẫn LUÔN kèm doc_id (CELEX) + số điều + ngày để người dùng tự kiểm trên nguồn chính thức.
 
