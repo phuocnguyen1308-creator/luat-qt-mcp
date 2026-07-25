@@ -18,7 +18,16 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "state_raw")
-GOC = "https://iga.in.gov/laws/2025/ic/titles/24/articles/15"
+
+# ⚠ Sau khi giả UA thì app BOOT được, nhưng /laws/2025/... trả 404: IC 24-15 hiệu lực
+#   01/01/2026 nên nằm ở ấn bản 2026. Thử lần lượt, lấy trang nào có nội dung thật.
+UNG_VIEN = [
+    "https://iga.in.gov/laws/2026/ic/titles/24/articles/15",
+    "https://iga.in.gov/laws/2026/ic/titles/24",
+    "https://iga.in.gov/laws/2025/ic/titles/24",
+    "https://iga.in.gov/laws/ic/2026/titles/24/articles/15",
+]
+GOC = UNG_VIEN[0]
 
 TRICH_JS = r"""
 function tx(e){return (e.innerText||'').replace(/\s+/g,' ').trim();}
@@ -81,11 +90,21 @@ def cho(d, muc=1500, giay=40):
 def main():
     os.makedirs(OUT, exist_ok=True)
     d = driver()
-    print(f"· mở {GOC}")
-    d.get(GOC)
-    n = cho(d)
-    res = d.execute_script(TRICH_JS)
-    print(f"  body {n} ký tự · {len(res['rows'])} điều · {len(res['links'])} chapter")
+    res, n, GOC_OK = None, 0, None
+    for u in UNG_VIEN:
+        print(f"· thử {u}")
+        d.get(u)
+        n = cho(d)
+        body = d.execute_script("return document.body ? document.body.innerText : ''") or ""
+        if "Page not found" in body or "404" in body[:200]:
+            print(f"    404 (body {len(body)})"); continue
+        res = d.execute_script(TRICH_JS)
+        print(f"    body {n} · {len(res['rows'])} điều · {len(res['links'])} chapter")
+        if res["rows"] or res["links"]:
+            GOC_OK = u; break
+    if res is None:
+        res = {"rows": [], "links": []}
+    print(f"  → dùng {GOC_OK or '(không trang nào có nội dung)'}")
 
     # ⚠ LƯU DOM ĐÃ RENDER: lần trước chỉ nhận được '[]' mà không biết trang có nội dung hay
     #   không (log job cần đăng nhập mới xem được). Giữ lại HTML + text để soi ngoại tuyến,
