@@ -18,8 +18,9 @@ Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
   • New Zealand (legislation.govt.nz): Privacy Act 2020 · Telecom Act 2001 · Harmful Digital Comms 2015
   • Úc (legislation.gov.au): Privacy Act 1988 · Online Safety Act 2021 · Critical Infrastructure 2018
   • Đức (gesetze-im-internet.de): BDSG · TTDSG · TKG · BSIG · DDG · NetzDG · LuftVO — ⚠ TIẾNG ĐỨC
-  • Tây Ban Nha (BOE): LOPDGDD · LSSI — ⚠ TIẾNG TÂY BAN NHA (chính thức)
-đang mở rộng US/UAE/Pháp... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định
+  • Tây Ban Nha (BOE): LOPDGDD · LSSI — ⚠ TIẾNG TÂY BAN NHA
+  • Chile (leychile/BCN): Ley 19.628 (vida privada) — ⚠ TIẾNG TÂY BAN NHA
+đang mở rộng Mỹ Latinh/US/UAE/Pháp... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định
 do cơ quan cấp (EU: CELEX; CH/IE: ELI; SG/CA/NZ/AU/DE: số điều; UK: pid CLML; article_key=doc_id+điều).
 Chủ đề gồm cả UAV/Drone (EU/AU/CA/SG/UK) ngoài privacy/ai/cyber/telecom.
 LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
