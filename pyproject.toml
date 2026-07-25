@@ -1,7 +1,7 @@
 [project]
 name = "luat-qt-mcp"
 description = "MCP server tra cứu pháp luật QUỐC TẾ (EU/UK/US... toàn văn) trên PostgreSQL"
-version = "0.20.0"
+version = "0.21.0"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
