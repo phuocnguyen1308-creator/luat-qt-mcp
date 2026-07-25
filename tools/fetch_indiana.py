@@ -37,12 +37,29 @@ return out;
 """
 
 
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+
+
 def driver():
+    """⚠ PHẢI giả UA thường. Selenium mặc định gửi 'HeadlessChrome' → iga.in.gov trả vỏ 668B,
+    trong khi CÙNG runner tải file JS bằng UA Chrome bình thường lại ra 2,3 MB thật.
+    Đây là lý do lần đầu render ra body rỗng (đã ẩn UA cho UK/NZ nhưng quên áp cho Indiana)."""
     o = Options()
     for a in ["--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu",
-              "--window-size=1400,3000"]:
+              "--window-size=1400,3000", "--disable-blink-features=AutomationControlled",
+              f"--user-agent={UA}"]:
         o.add_argument(a)
+    try:
+        o.add_experimental_option("excludeSwitches", ["enable-automation"])
+    except Exception:
+        pass
     d = webdriver.Chrome(options=o)
+    try:                                  # ẩn dấu vết tự động hoá
+        d.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",
+                          {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"})
+    except Exception:
+        pass
     d.set_page_load_timeout(120)
     return d
 
