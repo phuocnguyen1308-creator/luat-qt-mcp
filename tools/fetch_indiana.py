@@ -90,21 +90,46 @@ def cho(d, muc=1500, giay=40):
 def main():
     os.makedirs(OUT, exist_ok=True)
     d = driver()
-    res, n, GOC_OK = None, 0, None
-    for u in UNG_VIEN:
-        print(f"· thử {u}")
-        d.get(u)
-        n = cho(d)
+
+    # ⚠ ĐỪNG ĐOÁN URL NỮA: 4 mẫu đoán đều 404. Đi theo chính điều hướng của site —
+    #   mở trang Laws, đọc link thật, lần tới Title 24 rồi Article 15.
+    def mo(u):
+        d.get(u); cho(d)
         body = d.execute_script("return document.body ? document.body.innerText : ''") or ""
-        if "Page not found" in body or "404" in body[:200]:
-            print(f"    404 (body {len(body)})"); continue
-        res = d.execute_script(TRICH_JS)
-        print(f"    body {n} · {len(res['rows'])} điều · {len(res['links'])} chapter")
-        if res["rows"] or res["links"]:
-            GOC_OK = u; break
-    if res is None:
-        res = {"rows": [], "links": []}
-    print(f"  → dùng {GOC_OK or '(không trang nào có nội dung)'}")
+        links = d.execute_script(
+            "return [...document.querySelectorAll('a')].map(a=>[a.innerText.trim().slice(0,50),"
+            "a.getAttribute('href')||'']).filter(x=>x[1])")
+        return body, links
+
+    nav = {}
+    body, links = mo("https://iga.in.gov/laws")
+    nav["/laws"] = links[:80]
+    print(f"· /laws → body {len(body)} · {len(links)} link")
+    ic = [l for l in links if re.search(r"/ic\b|indiana-code|/laws/\d{4}", l[1])][:12]
+    print("   link kiểu Bộ luật:", ic[:6])
+
+    res, GOC_OK = {"rows": [], "links": []}, None
+    for ten, href in ic:
+        u = href if href.startswith("http") else "https://iga.in.gov" + href
+        b2, l2 = mo(u)
+        nav[href] = l2[:80]
+        t24 = [l for l in l2 if re.search(r"\b24\b", l[0]) or re.search(r"titles?/0?24\b", l[1])][:5]
+        print(f"   {href} → body {len(b2)} · gợi ý Title 24: {t24[:3]}")
+        if t24:
+            u24 = t24[0][1] if t24[0][1].startswith("http") else "https://iga.in.gov" + t24[0][1]
+            b3, l3 = mo(u24)
+            nav[t24[0][1]] = l3[:80]
+            a15 = [l for l in l3 if re.search(r"\b15\b", l[0]) or re.search(r"articles?/0?15\b", l[1])][:5]
+            print(f"      Title 24 → body {len(b3)} · gợi ý Article 15: {a15[:3]}")
+            if a15:
+                u15 = a15[0][1] if a15[0][1].startswith("http") else "https://iga.in.gov" + a15[0][1]
+                b4, _ = mo(u15)
+                res = d.execute_script(TRICH_JS)
+                GOC_OK = u15
+                print(f"      Article 15 → body {len(b4)} · {len(res['rows'])} điều")
+                break
+    json.dump(nav, open(os.path.join(OUT, "IN_nav.json"), "w"), ensure_ascii=False, indent=1)
+    print(f"  → đã lưu IN_nav.json (cấu trúc link thật) · dùng {GOC_OK or 'KHÔNG TÌM RA'}")
 
     # ⚠ LƯU DOM ĐÃ RENDER: lần trước chỉ nhận được '[]' mà không biết trang có nội dung hay
     #   không (log job cần đăng nhập mới xem được). Giữ lại HTML + text để soi ngoại tuyến,
