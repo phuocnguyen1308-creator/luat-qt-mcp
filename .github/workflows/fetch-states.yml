@@ -6,10 +6,20 @@
 # Trước đây workflow commit thẳng vào repo; đã bỏ để repo không phình và không giữ data.
 #
 # Chạy: tab Actions → "Tải luật bang Mỹ" → Run workflow.
-name: Tải luật bang Mỹ
+name: Luật bang Mỹ — tải & giám sát
 
 on:
   workflow_dispatch:
+    inputs:
+      ghi_moc:
+        description: 'Ghi lại MỐC CHUẨN giám sát (chạy lần đầu, hoặc sau khi đã xác nhận thay đổi)'
+        type: boolean
+        default: false
+  schedule:
+    # Mùng 1 hằng tháng 12:00 UTC (19h giờ VN) — chỉ chạy job GIÁM SÁT, không tải lại.
+    # ⚠ GitHub tự tắt lịch nếu repo im 60 ngày; thấy lịch ngừng chạy thì push một commit
+    #   bất kỳ để bật lại (đây là hành vi của GitHub, không phải lỗi script).
+    - cron: '0 12 1 * *'
   push:
     paths:
       - 'tools/**'          # mọi script tải, không riêng fetch_states
@@ -19,7 +29,48 @@ permissions:
   contents: read
 
 jobs:
+  # ── GIÁM SÁT: soi 12 cổng bang xem luật có sửa không (nhẹ, chạy theo lịch) ──────
+  # Tách khỏi job tải vì hai việc khác nhau: giám sát chỉ đọc mục lục và so số mục,
+  # không sinh dữ liệu; tải mới là việc nặng và chỉ làm khi giám sát báo có thay đổi.
+  giam_sat:
+    if: github.event_name != 'push'      # push sửa script thì chạy job fetch, không cần soi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write                    # chỉ job này cần quyền ghi (để lưu mốc chuẩn)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Soi 12 cổng bang so với mốc chuẩn
+        # KHÔNG continue-on-error: script cố tình exit 1 khi phát hiện luật đổi,
+        # để job đỏ và GitHub gửi mail — đó chính là cái chuông báo.
+        run: python tools/giam_sat_states.py ${{ inputs.ghi_moc && '--moc' || '' }}
+
+      # Mốc chuẩn = 12 dòng số mục + md5, KHÔNG phải nội dung luật → commit vào repo không
+      # phạm nguyên tắc "repo không lưu data". Phải commit thì lần chạy sau mới có cái để so;
+      # để trong artifact thì 30 ngày là mất.
+      - name: Lưu mốc chuẩn vào repo
+        if: inputs.ghi_moc
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/us_state_moc.json
+          git diff --staged --quiet || git commit -m "giám sát bang Mỹ: cập nhật mốc chuẩn"
+          git push
+
+      - name: Báo cáo chi tiết (kể cả khi có thay đổi)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: giam-sat-bang
+          path: state_raw/_giam_sat.json
+          retention-days: 30
+          if-no-files-found: warn
+
   fetch:
+    if: github.event_name != 'schedule'   # lịch tháng chỉ giám sát, không tải lại toàn bộ
     runs-on: ubuntu-latest    # runner của GitHub đặt ở Mỹ
     steps:
       - uses: actions/checkout@v4
