@@ -21,6 +21,9 @@ Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
   • Tây Ban Nha (BOE): LOPDGDD · LSSI — ⚠ TIẾNG TÂY BAN NHA
   • Chile (leychile/BCN): Ley 19.628 (vida privada) — ⚠ TIẾNG TÂY BAN NHA
   • Brazil (planalto): LGPD (Lei 13.709/2018) · Marco Civil da Internet — ⚠ TIẾNG BỒ ĐÀO NHA
+  • Pháp (DILA/LEGI, ✅bản hợp nhất): Loi 78-17 Informatique et Libertés · LCEN 2004-575 ·
+    Code pénal (226-16→226-24 dữ liệu cá nhân, 323-* tội phạm tin học) · Code des postes et
+    communications électroniques (L32–L34) — ⚠ TIẾNG PHÁP
   • UAE 3 tầng: LIÊN BANG 'AE' = PDPL (Nghị định-luật 45/2021) — ⚠ TIẾNG Ả RẬP (bản chính thức
     duy nhất) · free zone tài chính 'AE-ADGM' = ADGM DP Regulations 2021, 'AE-DIFC' = DIFC DP
     Law 5/2020 — tiếng Anh, ✅ BẢN HỢP NHẤT
