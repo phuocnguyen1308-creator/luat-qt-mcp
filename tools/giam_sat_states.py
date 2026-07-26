@@ -87,11 +87,16 @@ BANG = [
    ("https://nebraskalegislature.gov/laws/browse-chapters.php?chapter=87", r"\b87-(11\d{2})\b"),
   ], "kho lấy bản in &print=true của từng mục"),
  ("US-UT-UCPA", "Utah UCPA — Utah Code 13-61", [
-   ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html", r"\b13-61-([0-9]{3})\b"),
-   ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html", r"\b13-61-([0-9]{3})\b", "js"),
-   ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html?print=on",
-    r"\b13-61-([0-9]{3})\b", "js"),
-  ], "kho lấy từ PDF SB 227 (ĐÓNG BĂNG) → canh chương pháp điển"),
+   # ⚠ Utah KHÔNG canh theo số mục mà theo DẤU PHIÊN BẢN.
+   #   Khám phá bằng runner cho thấy mục lục chương chứa 5 liên kết phần dạng
+   #   '13-61-P1_2022050420231231' … '13-61-P5_2026050620270101'. Chuỗi số đó là mốc
+   #   hiệu lực của chính phần ấy: luật sửa thì dấu đổi. Đây là tín hiệu SẮC HƠN đếm mục —
+   #   sửa nội dung mà không thêm/bớt mục vẫn bắt được.
+   #   (Dấu nằm trong href nên phải nhờ nhánh khớp trên HTML thô.)
+   ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html",
+    r"13-61-(P\d+_\d+)", "js"),
+   ("https://law.justia.com/codes/utah/title-13/chapter-61/", r"13-61-(\d{3})", "js"),
+  ], "kho lấy từ PDF SB 227 (ĐÓNG BĂNG) → canh dấu phiên bản trên mục lục chương"),
  ("US-KY-CDPA", "Kentucky CDPA — KRS 367.3611–3629", [
    ("https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092", r"\b367\.(36\d{2})\b"),
   ], "kho lấy từng mục PDF; canh mục lục chương — ⚠ mục lục chỉ in DẢI '367.3611 … 367.3629' "
@@ -116,21 +121,27 @@ BANG = [
     r"56:8-166\.(\d+)", "js"),
   ], "kho lấy từ PDF P.L.2023 c.266 (ĐÓNG BĂNG) → cần bản pháp điển mới thấy sửa đổi"),
  ("US-TN-TIPA", "Tennessee TIPA — TCA 47-18-32", [
-   ("https://codes.findlaw.com/tn/title-47-commercial-instruments-and-transactions/",
-    r"\b47-18-32(\d{2})\b"),
-   ("https://codes.findlaw.com/tn/title-47-commercial-instruments-and-transactions/",
+   # Bản pháp điển TCA chính thức chỉ có trên LexisNexis (trang dựng bằng frame, không đọc
+   # được) và FindLaw thì trả 403 CẢ KHI gọi từ runner Mỹ. Justia render bằng Chrome thật thì
+   # qua — cùng lối đã ăn ở New Jersey.
+   ("https://law.justia.com/codes/tennessee/title-47/chapter-18/part-32/",
     r"\b47-18-32(\d{2})\b", "js"),
-   ("https://www.lexisnexis.com/hottopics/tncode/", r"\b47-18-32(\d{2})\b", "js"),
+   ("https://codes.findlaw.com/tn/title-47-commercial-instruments-and-transactions/chapter-18/part-32/",
+    r"\b47-18-32(\d{2})\b", "js"),
    ("https://www.capitol.tn.gov/Bills/113/Bill/SB0073.pdf", r"\b47-18-32(\d{2})\b"),
-  ], "kho lấy từ PDF SB0073 (ĐÓNG BĂNG) → cần bản pháp điển mới thấy sửa đổi"),
- ("US-CO-CPA", "Colorado CPA — CRS title 6 (part 13)", [
+  ], "kho lấy từ PDF SB0073 (ĐÓNG BĂNG) → canh bản pháp điển trên Justia"),
+ ("US-CO-CPA", "Colorado CPA — CRS 6-1-13 (part 13)", [
+   ("https://law.justia.com/codes/colorado/title-6/consumer-and-commercial-affairs/article-1/part-13/",
+    r"\b6-1-13(\d{2})\b", "js"),
+   # Tín hiệu phụ nhưng thật: trang OLLS trỏ tới bản CRS theo NĂM
+   # ('/agencies/office-legislative-legal-services/2025-crs-titles-download').
+   # Khám phá cho thấy CRS 2025 đã ra trong khi kho đang giữ bản 2024 → đây chính là loại
+   # thay đổi mà nguồn PDF đóng băng không bao giờ nói cho mình biết.
    ("https://leg.colorado.gov/agencies/office-legislative-legal-services/colorado-revised-statutes",
-    r"crs(20\d{2})-title"),
-   ("https://leg.colorado.gov/agencies/office-legislative-legal-services/colorado-revised-statutes",
-    r"crs(20\d{2})-title", "js"),
-   ("https://codes.findlaw.com/co/title-6-consumer-and-commercial-affairs/", r"\b6-1-13(\d{2})\b"),
-   ("https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf", r"\b6-1-13(\d{2})\b"),
-  ], "kho lấy PDF CRS THEO NĂM → canh trang mục lục để biết có bản năm mới"),
+    r"(\d{4})-crs-titles-download"),
+   ("https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+    r"\b6-1-13(\d{2})\b"),
+  ], "kho lấy PDF CRS 2024 (ĐÓNG BĂNG) → canh bản pháp điển + mốc năm phát hành"),
 ]
 
 
