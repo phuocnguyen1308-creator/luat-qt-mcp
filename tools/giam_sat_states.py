@@ -168,10 +168,21 @@ def trinh_duyet():
     return _drv
 
 
-def tai_js(url):
+def tai_js(url, re_muc=None, cho=25):
+    """Chờ ĐẾN KHI THẤY THỨ MÌNH CẦN, không ngủ cứng một khoảng.
+
+    Utah cho thấy vì sao: ngủ 7 giây thì trang mới dựng xong khung (3.010 ký tự, chỉ có
+    thanh điều hướng '13-60, 13-61, 13-62'), phần mục lục điều còn đang tải. Ngủ cứng là
+    đánh cược với tốc độ mạng; dò theo dấu hiệu thì chậm mạng chỉ tốn thêm giây, không sai
+    kết quả."""
     d = trinh_duyet()
     d.get(url)
-    time.sleep(7)                                # chờ SPA dựng xong
+    het = time.time() + cho
+    while time.time() < het:
+        time.sleep(2)
+        nguon = d.page_source
+        if re_muc and re.search(re_muc, re.sub(r"<[^>]+>", " ", nguon)):
+            break
     return d.page_source.encode("utf-8"), "text/html; charset=utf-8"
 
 
@@ -278,12 +289,17 @@ def do_mot_bang(ma, ten, ung_vien, ghi_chu, url_uu_tien=None):
     chạy định kỳ không phụ thuộc thứ tự khai báo — nếu không, thay đổi thứ tự trong bảng
     sẽ làm số mục nhảy và báo động giả."""
     ds = [tuple(x) + ("",) * (3 - len(x)) for x in ung_vien]
-    if url_uu_tien:
-        ds.sort(key=lambda x: x[0] != url_uu_tien)
+    # ⚠ Thứ tự: (1) nguồn ĐÓNG BĂNG luôn xuống cuối, (2) trong nhóm còn lại thì URL lần
+    #   trước ăn được thử trước.
+    #   Bài học vòng bốn: ban đầu chỉ ưu tiên "URL lần trước ăn" → TN và CO đã chốt mốc trên
+    #   file đóng băng nên ứng viên mới (bản pháp điển) KHÔNG BAO GIỜ tới lượt. Ưu tiên theo
+    #   trí nhớ mà không xét chất lượng thì tự khoá luôn đường nâng cấp: hệ thống trông vẫn
+    #   "chạy tốt" trong khi đứng yên ở chỗ tệ nhất.
+    ds.sort(key=lambda x: (x[0] in DONG_BANG, bool(url_uu_tien) and x[0] != url_uu_tien))
     loi = []
     for url, re_muc, cach in ds:
         try:
-            data, ct = tai_js(url) if cach == "js" else tai(url)
+            data, ct = tai_js(url, re_muc) if cach == "js" else tai(url)
         except QuaGio:
             loi.append(f"{url[:48]}… quá {HAN_GIO}s"); continue
         except urllib.error.HTTPError as e:
