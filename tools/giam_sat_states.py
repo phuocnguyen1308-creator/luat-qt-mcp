@@ -134,7 +134,10 @@ BANG = [
    ("https://codes.findlaw.com/tn/title-47-commercial-instruments-and-transactions/chapter-18/part-32/",
     r"\b47-18-32(\d{2})\b", "js"),
    ("https://www.capitol.tn.gov/Bills/113/Bill/SB0073.pdf", r"\b47-18-32(\d{2})\b"),
-  ], "kho lấy từ PDF SB0073 (ĐÓNG BĂNG) → canh bản pháp điển trên Justia"),
+  ], "⚠ CHƯA CANH ĐƯỢC NGUỒN — đang đậu trên PDF dự luật đóng băng. Đã thử và loại trừ: "
+     "FindLaw 403 rồi 404 (kể cả render); Justia dựng tường Cloudflare, chờ 45 giây vẫn ở "
+     "trang 'Just a moment'; bản TCA chính thức chỉ có trên LexisNexis dựng bằng frame. "
+     "Tennessee là bang duy nhất bắt buộc rà thủ công định kỳ."),
  ("US-CO-CPA", "Colorado CPA — CRS 6-1-13 (part 13)", [
    ("https://law.justia.com/codes/colorado/title-6/consumer-and-commercial-affairs/article-1/part-13/",
     r"\b6-1-13(\d{2})\b", "js"),
@@ -352,11 +355,13 @@ def do_mot_bang(ma, ten, ung_vien, ghi_chu, url_uu_tien=None):
 def main():
     moc = json.load(open(MOC, encoding="utf-8")) if os.path.exists(MOC) else {}
     pb_cu = moc.pop("_phien_ban_chuan_hoa", 0) if isinstance(moc, dict) else 0
+    moc_goc = dict(moc)                      # giữ nguyên bản để không ghi đè mất (xem dưới)
     if moc and pb_cu != PHIEN_BAN_CHUAN_HOA:
         print(f"⚠ Mốc chuẩn tạo bằng bộ chuẩn hoá phiên bản {pb_cu}, nay là {PHIEN_BAN_CHUAN_HOA}.")
         print("  → KHÔNG đem so (số ký tự sẽ lệch vì cách bóc chữ đổi, không phải luật sửa).")
         print("  → Chạy lại với --moc để chốt mốc mới.\n")
         moc = {}
+        moc_goc = {}
     kq, doi, hong = {}, [], []
     print(f"Giám sát {len(BANG)} bang Mỹ (nguồn raw_file, không canh được từ Pi)\n" + "─" * 72)
 
@@ -420,6 +425,17 @@ def main():
         ra = {"_phien_ban_chuan_hoa": PHIEN_BAN_CHUAN_HOA}
         ra.update({k: {x: v[x] for x in ("n_muc", "muc", "vt_muc", "n_ky_tu", "url", "cach") if x in v}
                    for k, v in kq.items() if v["tt"] == "ok"})
+        # ⚠ GIỮ LẠI mốc cũ của bang KHÔNG soi được lần này.
+        #   Lỗi thật vừa gặp: Texas dính 'Connection refused' một lần (mạng, không phải bị
+        #   chặn) → mốc rớt từ 12 xuống 11 bang. Tháng sau nó lập mốc mới trong im lặng, và
+        #   nếu Texas có sửa luật trong khoảng đó thì KHÔNG AI BIẾT — mất mốc là mất trí nhớ,
+        #   mà giám sát chỉ có giá trị nhờ trí nhớ.
+        giu = [k for k in moc_goc if k not in ra]
+        for k in giu:
+            ra[k] = moc_goc[k]
+        if giu:
+            print(f"    (giữ nguyên mốc cũ của {len(giu)} bang không soi được lần này: "
+                  f"{', '.join(giu)})")
         for k, v in kq.items():
             if v.get("dong_bang"):
                 ra[k]["dong_bang"] = True
