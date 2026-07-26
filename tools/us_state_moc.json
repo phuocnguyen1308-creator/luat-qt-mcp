@@ -1,5 +1,42 @@
 {
  "_phien_ban_chuan_hoa": 3,
+ "US-TX-DPSA": {
+  "n_muc": 28,
+  "muc": [
+   "001",
+   "002",
+   "003",
+   "004",
+   "005",
+   "051",
+   "052",
+   "053",
+   "054",
+   "055",
+   "101",
+   "102",
+   "103",
+   "104",
+   "105",
+   "106",
+   "107",
+   "151",
+   "152",
+   "153",
+   "154",
+   "155",
+   "156",
+   "201",
+   "202",
+   "203",
+   "204",
+   "205"
+  ],
+  "vt_muc": "f83d7a35757f7e87",
+  "n_ky_tu": 53654,
+  "url": "https://statutes.capitol.texas.gov/Docs/BC/htm/BC.541.htm",
+  "cach": "js"
+ },
  "US-OR-OCPA": {
   "n_muc": 15,
   "muc": [
@@ -21,7 +58,8 @@
   ],
   "vt_muc": "4d42369c5b232f6f",
   "n_ky_tu": 592001,
-  "url": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html"
+  "url": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
+  "cach": "http"
  },
  "US-CT-CTDPA": {
   "n_muc": 21,
@@ -50,7 +88,8 @@
   ],
   "vt_muc": "a9173092c4f4ad70",
   "n_ky_tu": 97773,
-  "url": "https://www.cga.ct.gov/current/pub/chap_743jj.htm"
+  "url": "https://www.cga.ct.gov/current/pub/chap_743jj.htm",
+  "cach": "http"
  },
  "US-NH-DPA": {
   "n_muc": 12,
@@ -70,7 +109,8 @@
   ],
   "vt_muc": "0530d7873aa47a45",
   "n_ky_tu": 48957,
-  "url": "https://www.gencourt.state.nh.us/rsa/html/LII/507-H/507-H-mrg.htm"
+  "url": "https://www.gencourt.state.nh.us/rsa/html/LII/507-H/507-H-mrg.htm",
+  "cach": "http"
  },
  "US-RI-DTPPA": {
   "n_muc": 10,
@@ -88,7 +128,8 @@
   ],
   "vt_muc": "6c2274983ce1ac0f",
   "n_ky_tu": 750,
-  "url": "http://webserver.rilegislature.gov/Statutes/TITLE6/6-48.1/INDEX.htm"
+  "url": "http://webserver.rilegislature.gov/Statutes/TITLE6/6-48.1/INDEX.htm",
+  "cach": "http"
  },
  "US-NE-DPA": {
   "n_muc": 30,
@@ -126,7 +167,8 @@
   ],
   "vt_muc": "edfcab246671ac16",
   "n_ky_tu": 14849,
-  "url": "https://nebraskalegislature.gov/laws/browse-chapters.php?chapter=87"
+  "url": "https://nebraskalegislature.gov/laws/browse-chapters.php?chapter=87",
+  "cach": "http"
  },
  "US-KY-CDPA": {
   "n_muc": 2,
@@ -136,7 +178,8 @@
   ],
   "vt_muc": "c7f2c5344ba12bbd",
   "n_ky_tu": 30118,
-  "url": "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092"
+  "url": "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092",
+  "cach": "http"
  },
  "US-MT-CDPA": {
   "n_muc": 19,
@@ -163,7 +206,19 @@
   ],
   "vt_muc": "fa3ee523415a63bd",
   "n_ky_tu": 1297,
-  "url": "https://archive.legmt.gov/bills/mca/title_0300/chapter_0140/part_0280/sections_index.html"
+  "url": "https://archive.legmt.gov/bills/mca/title_0300/chapter_0140/part_0280/sections_index.html",
+  "cach": "http"
+ },
+ "US-NJ-DPA": {
+  "n_muc": 2,
+  "muc": [
+   "4",
+   "6"
+  ],
+  "vt_muc": "4522e52d94f655e3",
+  "n_ky_tu": 12304,
+  "url": "https://law.justia.com/codes/new-jersey/title-56/section-56-8-166-4/",
+  "cach": "js"
  },
  "US-TN-TIPA": {
   "n_muc": 14,
@@ -185,7 +240,9 @@
   ],
   "vt_muc": "9b71328f5040dde1",
   "n_ky_tu": 48338,
-  "url": "https://www.capitol.tn.gov/Bills/113/Bill/SB0073.pdf"
+  "url": "https://www.capitol.tn.gov/Bills/113/Bill/SB0073.pdf",
+  "cach": "http",
+  "dong_bang": true
  },
  "US-CO-CPA": {
   "n_muc": 14,
@@ -207,6 +264,8 @@
   ],
   "vt_muc": "9b71328f5040dde1",
   "n_ky_tu": 1017567,
-  "url": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf"
+  "url": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+  "cach": "http",
+  "dong_bang": true
  }
 }
