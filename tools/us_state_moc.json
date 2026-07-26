@@ -1,0 +1,111 @@
+{
+ "US-OR-OCPA": {
+  "n_muc": 15,
+  "muc": [
+   "570",
+   "572",
+   "574",
+   "575",
+   "576",
+   "577",
+   "578",
+   "580",
+   "581",
+   "582",
+   "583",
+   "585",
+   "586",
+   "588",
+   "589"
+  ],
+  "vt_muc": "4d42369c5b232f6f",
+  "n_ky_tu": 616111,
+  "url": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html"
+ },
+ "US-NH-DPA": {
+  "n_muc": 12,
+  "muc": [
+   "1",
+   "2",
+   "3",
+   "4",
+   "5",
+   "6",
+   "7",
+   "8",
+   "9",
+   "10",
+   "11",
+   "12"
+  ],
+  "vt_muc": "0530d7873aa47a45",
+  "n_ky_tu": 49245,
+  "url": "https://www.gencourt.state.nh.us/rsa/html/LII/507-H/507-H-mrg.htm"
+ },
+ "US-RI-DTPPA": {
+  "n_muc": 10,
+  "muc": [
+   "1",
+   "2",
+   "3",
+   "4",
+   "5",
+   "6",
+   "7",
+   "8",
+   "9",
+   "10"
+  ],
+  "vt_muc": "6c2274983ce1ac0f",
+  "n_ky_tu": 850,
+  "url": "http://webserver.rilegislature.gov/Statutes/TITLE6/6-48.1/INDEX.htm"
+ },
+ "US-NE-DPA": {
+  "n_muc": 30,
+  "muc": [
+   "1101",
+   "1102",
+   "1103",
+   "1104",
+   "1105",
+   "1106",
+   "1107",
+   "1108",
+   "1109",
+   "1110",
+   "1111",
+   "1112",
+   "1113",
+   "1114",
+   "1115",
+   "1116",
+   "1117",
+   "1118",
+   "1119",
+   "1120",
+   "1121",
+   "1122",
+   "1123",
+   "1124",
+   "1125",
+   "1126",
+   "1127",
+   "1128",
+   "1129",
+   "1130"
+  ],
+  "vt_muc": "edfcab246671ac16",
+  "n_ky_tu": 14853,
+  "url": "https://nebraskalegislature.gov/laws/browse-chapters.php?chapter=87"
+ },
+ "US-KY-CDPA": {
+  "n_muc": 2,
+  "muc": [
+   "3611",
+   "3629"
+  ],
+  "vt_muc": "c7f2c5344ba12bbd",
+  "n_ky_tu": 30118,
+  "url": "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092"
+ }
+}
