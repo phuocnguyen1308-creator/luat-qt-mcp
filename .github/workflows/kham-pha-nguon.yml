@@ -1,0 +1,26 @@
+# Khám phá nguồn cho 3 bang mà giám sát chưa soi được (UT, TN, CO).
+#
+# Tách hẳn khỏi workflow chính vì đây là việc CHẠY TAY MỘT LẦN để tìm địa chỉ đúng,
+# không phải việc định kỳ. Chỉ đọc, không commit gì, không đụng mốc chuẩn.
+name: Khám phá nguồn 3 bang
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kham_pha:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cài selenium
+        run: pip install --quiet selenium
+
+      - name: Liệt kê liên kết và lệnh gọi mạng thật của 3 cổng
+        run: python tools/kham_pha_nguon.py
