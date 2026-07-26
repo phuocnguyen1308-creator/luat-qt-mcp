@@ -170,6 +170,20 @@
   "url": "https://nebraskalegislature.gov/laws/browse-chapters.php?chapter=87",
   "cach": "http"
  },
+ "US-UT-UCPA": {
+  "n_muc": 5,
+  "muc": [
+   "P1_2022050420231231",
+   "P2_2022050420231231",
+   "P3_2022050420231231",
+   "P4_2022050420231231",
+   "P5_2026050620270101"
+  ],
+  "vt_muc": "ca80a839d8753fd5",
+  "n_ky_tu": 3010,
+  "url": "https://le.utah.gov/xcode/Title13/Chapter61/13-61.html",
+  "cach": "js"
+ },
  "US-KY-CDPA": {
   "n_muc": 2,
   "muc": [
@@ -216,7 +230,7 @@
    "6"
   ],
   "vt_muc": "4522e52d94f655e3",
-  "n_ky_tu": 12304,
+  "n_ky_tu": 12766,
   "url": "https://law.justia.com/codes/new-jersey/title-56/section-56-8-166-4/",
   "cach": "js"
  },
@@ -245,27 +259,13 @@
   "dong_bang": true
  },
  "US-CO-CPA": {
-  "n_muc": 14,
+  "n_muc": 1,
   "muc": [
-   "01",
-   "02",
-   "03",
-   "04",
-   "05",
-   "06",
-   "07",
-   "08",
-   "09",
-   "10",
-   "11",
-   "12",
-   "13",
-   "14"
+   "2025"
   ],
-  "vt_muc": "9b71328f5040dde1",
-  "n_ky_tu": 1017567,
-  "url": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
-  "cach": "http",
-  "dong_bang": true
+  "vt_muc": "312351bff0798976",
+  "n_ky_tu": 6184,
+  "url": "https://leg.colorado.gov/agencies/office-legislative-legal-services/colorado-revised-statutes",
+  "cach": "http"
  }
 }
