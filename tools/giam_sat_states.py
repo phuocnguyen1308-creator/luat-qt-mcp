@@ -63,8 +63,9 @@ PHIEN_BAN_CHUAN_HOA = 3
 BANG = [
  ("US-TX-DPSA", "Texas DPSA — Bus. & Com. Code ch. 541", [
    ("https://statutes.capitol.texas.gov/Docs/BC/htm/BC.541.htm", r"\b541\.(\d{3})\b"),
-   ("https://statutes.capitol.texas.gov/Docs/BC/pdf/BC.541.pdf", r"\b541\.(\d{3})\b"),
-   ("https://statutes.capitol.texas.gov/SOTWDocs/BC/htm/BC.541.htm", r"\b541\.(\d{3})\b"),
+   ("https://statutes.capitol.texas.gov/Docs/BC/htm/BC.541.htm", r"\b541\.(\d{3})\b", "js"),
+   ("https://statutes.capitol.texas.gov/StatutesByDate.aspx?code=BC&level=CH&value=541",
+    r"\b541\.(\d{3})\b", "js"),
   ], "kho lấy từ PDF dự luật HB4 → canh chương pháp điển"),
  ("US-OR-OCPA", "Oregon OCPA — ORS 646A.570–589", [
    ("https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html", r"\b646A\.(5[78]\d)\b"),
@@ -87,8 +88,9 @@ BANG = [
   ], "kho lấy bản in &print=true của từng mục"),
  ("US-UT-UCPA", "Utah UCPA — Utah Code 13-61", [
    ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html", r"\b13-61-([0-9]{3})\b"),
-   ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html?print=on", r"\b13-61-([0-9]{3})\b"),
-   ("https://le.utah.gov/xcode/Title13/Chapter61/C13-61.pdf", r"\b13-61-([0-9]{3})\b"),
+   ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html", r"\b13-61-([0-9]{3})\b", "js"),
+   ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html?print=on",
+    r"\b13-61-([0-9]{3})\b", "js"),
   ], "kho lấy từ PDF SB 227 (ĐÓNG BĂNG) → canh chương pháp điển"),
  ("US-KY-CDPA", "Kentucky CDPA — KRS 367.3611–3629", [
    ("https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092", r"\b367\.(36\d{2})\b"),
@@ -110,16 +112,22 @@ BANG = [
    ("http://njlaw.rutgers.edu/collections/njstats/showsect.php?title=56&chapter=8&section=166.4&actn=getsect",
     r"56:8-166\.(\d+)"),
    ("https://njlaw.rutgers.edu/collections/njstats/", r"56:8-166\.(\d+)"),
+   ("https://law.justia.com/codes/new-jersey/title-56/section-56-8-166-4/",
+    r"56:8-166\.(\d+)", "js"),
   ], "kho lấy từ PDF P.L.2023 c.266 (ĐÓNG BĂNG) → cần bản pháp điển mới thấy sửa đổi"),
  ("US-TN-TIPA", "Tennessee TIPA — TCA 47-18-32", [
    ("https://codes.findlaw.com/tn/title-47-commercial-instruments-and-transactions/",
     r"\b47-18-32(\d{2})\b"),
-   ("https://www.lexisnexis.com/hottopics/tncode/", r"\b47-18-32(\d{2})\b"),
+   ("https://codes.findlaw.com/tn/title-47-commercial-instruments-and-transactions/",
+    r"\b47-18-32(\d{2})\b", "js"),
+   ("https://www.lexisnexis.com/hottopics/tncode/", r"\b47-18-32(\d{2})\b", "js"),
    ("https://www.capitol.tn.gov/Bills/113/Bill/SB0073.pdf", r"\b47-18-32(\d{2})\b"),
   ], "kho lấy từ PDF SB0073 (ĐÓNG BĂNG) → cần bản pháp điển mới thấy sửa đổi"),
  ("US-CO-CPA", "Colorado CPA — CRS title 6 (part 13)", [
    ("https://leg.colorado.gov/agencies/office-legislative-legal-services/colorado-revised-statutes",
     r"crs(20\d{2})-title"),
+   ("https://leg.colorado.gov/agencies/office-legislative-legal-services/colorado-revised-statutes",
+    r"crs(20\d{2})-title", "js"),
    ("https://codes.findlaw.com/co/title-6-consumer-and-commercial-affairs/", r"\b6-1-13(\d{2})\b"),
    ("https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf", r"\b6-1-13(\d{2})\b"),
   ], "kho lấy PDF CRS THEO NĂM → canh trang mục lục để biết có bản năm mới"),
@@ -127,6 +135,44 @@ BANG = [
 
 
 HAN_GIO = 60          # trần thời gian cho MỖI bang
+
+# ⚠ NGUỒN ĐÓNG BĂNG — có lấy được nhưng KHÔNG canh được sửa đổi.
+# Vòng chạy thứ ba: TN và CO "qua" nhờ pdftotext, nhưng cái qua được lại là PDF dự luật đã
+# ban hành / PDF CRS theo năm. Hai file đó không bao giờ đổi nữa → mốc chuẩn đẹp mà giám sát
+# rỗng. Đúng cái bẫy ghi ở đầu file mà vẫn rơi vào: có SỐ trong báo cáo dễ làm mình tưởng
+# là có PHỦ. Giữ lại làm mốc tạm, nhưng phải hô to mỗi lần chạy.
+DONG_BANG = {
+    "https://www.capitol.tn.gov/Bills/113/Bill/SB0073.pdf",
+    "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+    "https://pub.njleg.state.nj.us/Bills/2022/PL23/266_.PDF",
+}
+
+# ── Trình duyệt thật cho cổng SPA ─────────────────────────────────────────────
+# Texas và Utah trả HTML 250 KB / 26 KB mà chỉ 1.354 / 2.474 ký tự chữ: nội dung dựng bằng
+# JS, không có trong HTML. urllib không bao giờ với tới. Runner đã sẵn Chrome (dùng cho
+# Indiana) nên mở cùng một lối: ứng viên gắn cờ "js" thì render rồi mới đọc.
+_drv = None
+
+
+def trinh_duyet():
+    global _drv
+    if _drv is None:
+        from selenium import webdriver
+        from selenium.webdriver.chrome.options import Options
+        o = Options()
+        for a in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"):
+            o.add_argument(a)
+        o.add_argument("--user-agent=" + UA)     # 'HeadlessChrome' mặc định bị nhiều cổng chặn
+        _drv = webdriver.Chrome(options=o)
+        _drv.set_page_load_timeout(60)
+    return _drv
+
+
+def tai_js(url):
+    d = trinh_duyet()
+    d.get(url)
+    time.sleep(7)                                # chờ SPA dựng xong
+    return d.page_source.encode("utf-8"), "text/html; charset=utf-8"
 
 
 class QuaGio(Exception):
@@ -231,19 +277,20 @@ def do_mot_bang(ma, ten, ung_vien, ghi_chu, url_uu_tien=None):
     ⚠ Thứ tự ưu tiên: URL đã ăn ở lần trước (ghi trong mốc chuẩn) được thử trước, để lần
     chạy định kỳ không phụ thuộc thứ tự khai báo — nếu không, thay đổi thứ tự trong bảng
     sẽ làm số mục nhảy và báo động giả."""
-    ds = list(ung_vien)
+    ds = [tuple(x) + ("",) * (3 - len(x)) for x in ung_vien]
     if url_uu_tien:
         ds.sort(key=lambda x: x[0] != url_uu_tien)
     loi = []
-    for url, re_muc in ds:
+    for url, re_muc, cach in ds:
         try:
-            data, ct = tai(url)
+            data, ct = tai_js(url) if cach == "js" else tai(url)
         except QuaGio:
             loi.append(f"{url[:48]}… quá {HAN_GIO}s"); continue
         except urllib.error.HTTPError as e:
             loi.append(f"{url[:48]}… HTTP {e.code}"); continue      # mã lỗi nói rõ hơn tên lớp
         except Exception as e:
-            loi.append(f"{url[:48]}… {type(e).__name__}: {str(e)[:40]}"); continue
+            loi.append(f"{url[:48]}…{' [js]' if cach == 'js' else ''} "
+                       f"{type(e).__name__}: {str(e)[:40]}"); continue
         txt = van_ban_thuan(data, ct)
         muc = sorted(set(re.findall(re_muc, txt)), key=lambda s: (len(s), s))
         if not muc and data[:4] != b"%PDF":
@@ -260,7 +307,8 @@ def do_mot_bang(ma, ten, ung_vien, ghi_chu, url_uu_tien=None):
             chan_doan(url, data, txt); continue
         return {"ma": ma, "tt": "ok", "n_muc": len(muc), "muc": muc,
                 "vt_muc": hashlib.md5(",".join(muc).encode()).hexdigest()[:16],
-                "n_ky_tu": len(txt), "url": url}
+                "n_ky_tu": len(txt), "url": url, "cach": cach or "http",
+                "dong_bang": url in DONG_BANG}
     return {"ma": ma, "tt": "khong_lay_duoc", "loi": " | ".join(loi)}
 
 
@@ -285,7 +333,8 @@ def main():
 
         cu = moc.get(ma)
         if not cu:
-            print(f"  · {ma:13} {r['n_muc']:>3} mục — mốc mới ({r['url'][:60]})")
+            canh = "⚠ NGUỒN ĐÓNG BĂNG — có mốc nhưng KHÔNG canh được sửa đổi" if r.get("dong_bang") else ""
+            print(f"  · {ma:13} {r['n_muc']:>3} mục — mốc mới ({r['url'][:60]}) {canh}")
             time.sleep(0.3); continue
 
         khac = []
@@ -304,17 +353,29 @@ def main():
         if khac:
             doi.append((ma, ten, khac))
             print(f"  ⚠ {ma:13} " + " · ".join(khac))
+        elif r.get("dong_bang"):
+            print(f"  ⚠ {ma:13} {r['n_muc']:>3} mục — 'không đổi' NHƯNG nguồn đóng băng, "
+                  f"tin này vô nghĩa")
         else:
             print(f"  ✅ {ma:13} {r['n_muc']:>3} mục, không đổi")
         time.sleep(0.3)
+
+    if _drv is not None:
+        try:
+            _drv.quit()
+        except Exception:
+            pass
 
     os.makedirs(os.path.dirname(BAO_CAO), exist_ok=True)
     json.dump(kq, open(BAO_CAO, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
     if GHI_MOC:
         ra = {"_phien_ban_chuan_hoa": PHIEN_BAN_CHUAN_HOA}
-        ra.update({k: {x: v[x] for x in ("n_muc", "muc", "vt_muc", "n_ky_tu", "url") if x in v}
+        ra.update({k: {x: v[x] for x in ("n_muc", "muc", "vt_muc", "n_ky_tu", "url", "cach") if x in v}
                    for k, v in kq.items() if v["tt"] == "ok"})
+        for k, v in kq.items():
+            if v.get("dong_bang"):
+                ra[k]["dong_bang"] = True
         json.dump(ra, open(MOC, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         print(f"\n>>> Đã ghi mốc chuẩn: {MOC}  ({sum(1 for v in kq.values() if v['tt']=='ok')} bang)")
         return

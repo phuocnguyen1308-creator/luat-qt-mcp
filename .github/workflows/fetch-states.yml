@@ -49,6 +49,11 @@ jobs:
       - name: Cài poppler-utils (pdftotext)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
 
+      # Texas/Utah/Colorado dựng nội dung bằng JS → phải render mới đọc được mục lục.
+      # Selenium 4.6+ tự tải chromedriver khớp Chrome có sẵn trên runner.
+      - name: Cài selenium (cho cổng dựng bằng JS)
+        run: pip install --quiet selenium
+
       - name: Soi 12 cổng bang so với mốc chuẩn
         # KHÔNG continue-on-error: script cố tình exit 1 khi phát hiện luật đổi,
         # để job đỏ và GitHub gửi mail — đó chính là cái chuông báo.
