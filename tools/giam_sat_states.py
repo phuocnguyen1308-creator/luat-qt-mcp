@@ -102,6 +102,14 @@ BANG = [
     r"13-61-(P\d+_\d+)", "js"),
    ("https://law.justia.com/codes/utah/title-13/chapter-61/", r"13-61-(\d{3})", "js"),
   ], "kho lấy từ PDF SB 227 (ĐÓNG BĂNG) → canh dấu phiên bản trên mục lục chương"),
+ ("US-IN-CDPA", "Indiana CDPA — IC 24-15", [
+   # Kho lấy từ PDF dự luật SEA 5 (2023) — ĐÓNG BĂNG. Nhưng IC 24-15 có hiệu lực 01/01/2026,
+   # nghĩa là TỪ NAY (7/2026) bản pháp điển đã tồn tại trên iga.in.gov — thứ mà các vòng
+   # trước dò năm 2025 nên chỉ nhận 404. Thử lại bằng năm 2026 qua trình duyệt thật.
+   ("https://iga.in.gov/laws/2026/ic/titles/24/articles/15", r"24-15-(\d+-\d+)", "js"),
+   ("https://iga.in.gov/laws/2026/ic/titles/24/articles/15?print=true", r"24-15-(\d+-\d+)"),
+   ("https://law.justia.com/codes/indiana/title-24/article-15/", r"24-15-(\d+-\d+)", "js"),
+  ], "kho lấy từ PDF SEA 5 (ĐÓNG BĂNG) → thử bản pháp điển 2026 vừa có hiệu lực"),
  ("US-KY-CDPA", "Kentucky CDPA — KRS 367.3611–3629", [
    ("https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092", r"\b367\.(36\d{2})\b"),
   ], "kho lấy từng mục PDF; canh mục lục chương — ⚠ mục lục chỉ in DẢI '367.3611 … 367.3629' "
