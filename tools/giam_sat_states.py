@@ -47,6 +47,11 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
 NGUONG_DAI = 0.02        # lệch độ dài dưới 2% coi là banner/ngày tháng, không phải luật
 
+# ⚠ Trang PHÁP ĐIỂN THƯƠNG MẠI (Justia, FindLaw) có quảng cáo, mục "án lệ dẫn chiếu", ngày
+# cập nhật — độ dài dao động vài phần trăm mỗi lần tải mà luật không đụng gì. New Jersey vừa
+# báo "lệch 3,8% — nghi sửa nội dung" đúng vì vậy. Với các host này CHỈ tin danh sách số mục.
+HOST_KHONG_TIN_DO_DAI = {"law.justia.com", "codes.findlaw.com"}
+
 # ⚠ TĂNG SỐ NÀY MỖI KHI SỬA van_ban_thuan()/giai_ma().
 # Bài học từ vòng chạy thứ hai: vừa thêm gỡ &nbsp; và dò bảng mã là OR nhảy 3,9%, RI nhảy
 # 11,8% — báo "nghi sửa nội dung" trong khi luật không đụng gì. Mốc chuẩn chỉ so được với
@@ -179,7 +184,7 @@ def trinh_duyet():
     return _drv
 
 
-def tai_js(url, re_muc=None, cho=25):
+def tai_js(url, re_muc=None, cho=45):
     """Chờ ĐẾN KHI THẤY THỨ MÌNH CẦN, không ngủ cứng một khoảng.
 
     Utah cho thấy vì sao: ngủ 7 giây thì trang mới dựng xong khung (3.010 ký tự, chỉ có
@@ -192,6 +197,11 @@ def tai_js(url, re_muc=None, cho=25):
     while time.time() < het:
         time.sleep(2)
         nguon = d.page_source
+        # Justia dựng tường Cloudflare ("Just a moment… Performing security verification").
+        # Nó tự qua sau ~10-20 giây NẾU chịu chờ; 25 giây trước đây là chưa đủ cho cả
+        # thời gian xác minh lẫn thời gian dựng trang.
+        if "Just a moment" in nguon or "security verification" in nguon:
+            continue
         if re_muc and re.search(re_muc, re.sub(r"<[^>]+>", " ", nguon)):
             break
     return d.page_source.encode("utf-8"), "text/html; charset=utf-8"
@@ -359,6 +369,14 @@ def main():
             hong.append(ma); time.sleep(0.3); continue
 
         cu = moc.get(ma)
+        # ⚠ So sánh chỉ có nghĩa khi HAI BÊN CÙNG MỘT NGUỒN.
+        #   Vòng chạy thứ sáu: Colorado chuyển từ PDF CRS 2024 sang trang mốc năm, monitor
+        #   hô "danh sách mục đổi 14 → 1, mất 01..14" — nghe như Colorado xoá 14 mục luật,
+        #   thực ra chỉ là tôi đổi chỗ nhìn. Cùng họ với lỗi đổi bộ chuẩn hoá: mốc cũ so với
+        #   nguồn mới thì con số nào cũng vô nghĩa, mà lại vô nghĩa theo kiểu RẤT GIỐNG THẬT.
+        if cu and cu.get("url") and cu["url"] != r["url"]:
+            print(f"  ⟳ {ma:13} ĐỔI NGUỒN, không so lần này ({cu['url'][:44]} → {r['url'][:44]})")
+            cu = None
         if not cu:
             canh = "⚠ NGUỒN ĐÓNG BĂNG — có mốc nhưng KHÔNG canh được sửa đổi" if r.get("dong_bang") else ""
             print(f"  · {ma:13} {r['n_muc']:>3} mục — mốc mới ({r['url'][:60]}) {canh}")
@@ -371,8 +389,10 @@ def main():
             khac.append(f"danh sách mục đổi ({cu.get('n_muc')} → {r['n_muc']})"
                         + (f" · thêm {them}" if them else "") + (f" · mất {mat}" if mat else ""))
         else:
+            from urllib.parse import urlparse
+            tin_do_dai = urlparse(r["url"]).hostname not in HOST_KHONG_TIN_DO_DAI
             ty = abs(r["n_ky_tu"] - cu.get("n_ky_tu", 0)) / max(cu.get("n_ky_tu", 1), 1)
-            if ty >= NGUONG_DAI:
+            if ty >= NGUONG_DAI and tin_do_dai:
                 khac.append(f"số mục y nguyên nhưng độ dài lệch {ty*100:.1f}% "
                             f"({cu.get('n_ky_tu')} → {r['n_ky_tu']} ký tự) — nghi sửa nội dung mục")
             elif ty:
