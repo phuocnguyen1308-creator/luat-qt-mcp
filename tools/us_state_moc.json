@@ -1,4 +1,5 @@
 {
+ "_phien_ban_chuan_hoa": 3,
  "US-OR-OCPA": {
   "n_muc": 15,
   "muc": [
@@ -21,6 +22,35 @@
   "vt_muc": "4d42369c5b232f6f",
   "n_ky_tu": 592001,
   "url": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html"
+ },
+ "US-CT-CTDPA": {
+  "n_muc": 21,
+  "muc": [
+   "515",
+   "516",
+   "517",
+   "518",
+   "519",
+   "520",
+   "521",
+   "522",
+   "523",
+   "524",
+   "525",
+   "526",
+   "527",
+   "528",
+   "529",
+   "530",
+   "529a",
+   "529b",
+   "529c",
+   "529d",
+   "529e"
+  ],
+  "vt_muc": "a9173092c4f4ad70",
+  "n_ky_tu": 97773,
+  "url": "https://www.cga.ct.gov/current/pub/chap_743jj.htm"
  },
  "US-NH-DPA": {
   "n_muc": 12,
@@ -134,5 +164,49 @@
   "vt_muc": "fa3ee523415a63bd",
   "n_ky_tu": 1297,
   "url": "https://archive.legmt.gov/bills/mca/title_0300/chapter_0140/part_0280/sections_index.html"
+ },
+ "US-TN-TIPA": {
+  "n_muc": 14,
+  "muc": [
+   "01",
+   "02",
+   "03",
+   "04",
+   "05",
+   "06",
+   "07",
+   "08",
+   "09",
+   "10",
+   "11",
+   "12",
+   "13",
+   "14"
+  ],
+  "vt_muc": "9b71328f5040dde1",
+  "n_ky_tu": 48338,
+  "url": "https://www.capitol.tn.gov/Bills/113/Bill/SB0073.pdf"
+ },
+ "US-CO-CPA": {
+  "n_muc": 14,
+  "muc": [
+   "01",
+   "02",
+   "03",
+   "04",
+   "05",
+   "06",
+   "07",
+   "08",
+   "09",
+   "10",
+   "11",
+   "12",
+   "13",
+   "14"
+  ],
+  "vt_muc": "9b71328f5040dde1",
+  "n_ky_tu": 1017567,
+  "url": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf"
  }
 }
