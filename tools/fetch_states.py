@@ -8,120 +8,97 @@ Máy ở Việt Nam (sandbox / Pi / Mac) đều không lấy được; runner Gi
 ⚠ DỮ LIỆU KHÔNG LƯU TRONG REPO: workflow đóng gói state_raw/ thành artifact (7 ngày),
    rồi nạp vào Pi (bảng luatqt_db.raw_file). Repo/Mac chỉ là đường trung chuyển.
 
-ĐỢT 4 — 3 bang cuối. Đợt 3 thất bại KHÔNG phải vì bị chặn, mà vì SAI NGUỒN:
-  • KY: chapter.aspx?id=38940 hoá ra là KRS 351 (Mỏ), không phải 367; và HB15 tải về
-        là dự luật 2022 về DÂN QUYỀN. CDPA của Kentucky là HB 15 khoá **2024**.
-  • UT: 19 trang mục đều đúng 2.179 ký tự = vỏ SPA. Mục lục có nhúng chuỗi phiên bản
-        'C13-61_2022050420231231' → thử tham số ?v= và bản in.
-  • IN: bundle JS không có endpoint /api/, nhưng lộ ra 'archive.iga.in.gov'.
+ĐỢT 6 — COLORADO: cập nhật từ CRS 2024 lên CRS 2025.
 
-MẸO RÚT RA TỪ NEBRASKA: nhiều cổng có BẢN IN TĨNH nấp sau giao diện JS
-('&print=true'). Luôn thử bản in trước khi kết luận là SPA không lấy được.
+VÌ SAO PHẢI LÀM: kho đang giữ bản pháp điển **CRS 2024** trong khi Colorado đã phát hành
+**CRS 2025**. Phát hiện này KHÔNG đến từ giám sát mà từ vòng khám phá nguồn — suốt thời gian
+đó Colorado neo trên một PDF theo năm, mà file đó không bao giờ đổi. Bài học: nguồn đóng băng
+im lặng KHÔNG PHẢI vì luật không đổi, mà vì **nó không biết gì cả**.
+
+CÁCH LÀM — KHÔNG ĐOÁN ĐƯỜNG DẪN (bảy vòng trước đã dạy đủ):
+trang OLLS trỏ tới '/agencies/…/2025-crs-titles-download'. Script mở đúng trang đó, đọc danh
+sách liên kết, tự tìm file title 06 rồi tải. Sang năm có CRS 2026 thì OLLS đổi liên kết là
+script bám theo, không phải sửa tay.
+
+⚠ Đặt tên file ĐÚNG như adapter chờ: `CO_title06.html` (usa_state._fetch_co) — dù nội dung là
+   PDF. Đổi tên là adapter không thấy.
 """
-import urllib.request, ssl, os, re, json, time
+import urllib.request, ssl, os, re, json, subprocess, tempfile
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "state_raw")
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
 CTX = ssl.create_default_context()
-LOG = []
+GOC = "https://leg.colorado.gov"
+OLLS = GOC + "/agencies/office-legislative-legal-services/colorado-revised-statutes"
 
 
-def H(ref=None):
-    h = {"User-Agent": UA,
-         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-         "Accept-Language": "en-US,en;q=0.9", "Upgrade-Insecure-Requests": "1"}
+def get(url, ref=None, timeout=120):
+    h = {"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9",
+         "Accept": "text/html,application/xhtml+xml,application/pdf,*/*;q=0.8"}
     if ref:
         h["Referer"] = ref
-    return h
-
-
-def get(url, ref=None, timeout=40):
-    with urllib.request.urlopen(urllib.request.Request(url, headers=H(ref)),
+    with urllib.request.urlopen(urllib.request.Request(url, headers=h),
                                 timeout=timeout, context=CTX) as r:
         return r.read()
 
 
-def grab(name, url, ref=None, im=False):
-    try:
-        data = get(url, ref=ref)
-        kind = ".pdf" if data[:4] == b"%PDF" else ".html"
-        open(os.path.join(OUT, name + kind), "wb").write(data)
-        if not im:
-            print(f"OK   {name:22} {len(data):>9,}B {kind}")
-        LOG.append({"name": name, "url": url, "bytes": len(data), "ok": True})
-        return data
-    except Exception as e:
-        if not im:
-            print(f"LỖI  {name:22} {type(e).__name__}: {str(e)[:55]}")
-        LOG.append({"name": name, "url": url, "ok": False, "err": f"{type(e).__name__}: {e}"})
-        return None
+def tuyet_doi(u):
+    return u if u.startswith("http") else GOC + u
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
 
-    # ── KENTUCKY — CDPA (KRS 367.3611 et seq.) ──
-    # ⚠ KRS 367 (Consumer Protection) là chương RẤT LỚN (hàng trăm mục). Tải hết rồi lọc
-    #   là sai lầm: chạy hơn 20 phút. Cách đúng — DÒ NHỊ PHÂN: id sắp theo thứ tự số mục,
-    #   nên chỉ cần thăm dò thưa để tìm dải id ứng với 367.36xx rồi tải đúng dải đó.
-    import io, subprocess, tempfile
+    # ── B1: trang OLLS → trang tải CRS của NĂM MỚI NHẤT ────────────────────────
+    print(f"1) mở {OLLS}")
+    html = get(OLLS).decode("utf-8", "replace")
+    nam = sorted(set(re.findall(r'href="([^"]*?(\d{4})-crs-titles-download[^"]*)"', html)),
+                 key=lambda x: x[1])
+    if not nam:
+        print("   ❌ không thấy liên kết '*-crs-titles-download' — trang OLLS đã đổi cấu trúc")
+        return
+    trang_tai, nam_moi = tuyet_doi(nam[-1][0]), nam[-1][1]
+    print(f"   → bản mới nhất: CRS {nam_moi} · {trang_tai}")
 
-    def so_muc(data):
-        """Đọc số hiệu KRS từ PDF một mục (vd '367.3611'). None nếu không đọc được."""
-        if data[:4] != b"%PDF":
-            return None
-        try:
-            with tempfile.TemporaryDirectory() as td:
-                f = os.path.join(td, "a.pdf"); open(f, "wb").write(data)
-                subprocess.run(["pdftotext", "-enc", "UTF-8", f, td + "/a.txt"], check=False)
-                t = open(td + "/a.txt", encoding="utf-8", errors="replace").read(300)
-        except FileNotFoundError:
-            print("     ⚠ máy không có pdftotext — không dò được số mục")
-            return None
-        except Exception:
-            return None
-        m = re.search(r"\b(367\.\d+)\b", t)
-        return float(m.group(1)) if m else None
+    # ── B2: trang tải → PDF title 06 ───────────────────────────────────────────
+    html2 = get(trang_tai, ref=OLLS).decode("utf-8", "replace")
+    ung = sorted({h for h in re.findall(r'href="([^"]+)"', html2)
+                  if re.search(r"title[-_ ]?0?6\b", h, re.I) and h.lower().endswith(".pdf")})
+    if not ung:
+        # nói ra mình THẤY GÌ, đừng im lặng thất bại
+        pdf = sorted({h for h in re.findall(r'href="([^"]+)"', html2) if h.lower().endswith(".pdf")})
+        print(f"   ❌ không khớp title 06. Trang có {len(pdf)} PDF, 15 cái đầu:")
+        for p in pdf[:15]:
+            print(f"      {p}")
+        return
+    url_pdf = tuyet_doi(ung[0])
+    print(f"2) tải {url_pdf}")
 
-    ky = grab("KY_367_real", "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092",
-              ref="https://apps.legislature.ky.gov/law/statutes/")
-    if ky:
-        ids = sorted(set(re.findall(r'statute\.aspx\?id=(\d+)',
-                                   ky.decode("utf-8", "replace"))), key=int)
-        print(f"     → chương có {len(ids)} mục; dò thưa để tìm dải 367.36xx")
-        BASE = "https://apps.legislature.ky.gov/law/statutes/statute.aspx?id="
-        REF = "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092"
-        mau = {}
-        buoc = max(1, len(ids) // 25)                 # ~25 lượt thăm dò
-        for k in range(0, len(ids), buoc):
-            d = get(BASE + ids[k], ref=REF)
-            n = so_muc(d)
-            if n:
-                mau[k] = n
-            print(f"        mẫu[{k}] id={ids[k]} → {n}")
-            time.sleep(0.15)
-        # vị trí đầu tiên có số ≥ 367.36 và cuối cùng < 367.37
-        trong = [k for k, v in mau.items() if 367.36 <= v < 367.37]
-        if trong:
-            lo = max(0, min(trong) - buoc)
-            hi = min(len(ids), max(trong) + buoc + 1)
-        else:                                         # không trúng mẫu → lấy quanh chỗ gần nhất
-            gan = min(mau, key=lambda k: abs(mau[k] - 367.36)) if mau else 0
-            lo, hi = max(0, gan - buoc), min(len(ids), gan + 2 * buoc)
-        print(f"     → tải dải id[{lo}:{hi}] ({hi-lo} mục)")
-        ok = 0
-        for i in ids[lo:hi]:
-            if grab(f"KY367_{i}", BASE + i, ref=REF, im=True):
-                ok += 1
-            time.sleep(0.15)
-        print(f"     → tải được {ok}/{hi-lo}")
+    data = get(url_pdf, ref=trang_tai)
+    if data[:4] != b"%PDF":
+        print(f"   ❌ tải về {len(data):,}B nhưng KHÔNG phải PDF — nghi trang chặn")
+        return
+    dich = os.path.join(OUT, "CO_title06.html")     # tên adapter đang chờ (nội dung là PDF)
+    open(dich, "wb").write(data)
+    print(f"   → {len(data):,}B → {os.path.basename(dich)}")
 
-    # (UT xong bằng PDF dự luật SB 227; IN chuyển sang headless trên Pi — in_pi_load.py)
+    # ── B3: kiểm NGAY, đừng để tới lúc nạp vào Pi mới biết hỏng ────────────────
+    with tempfile.TemporaryDirectory() as td:
+        f = os.path.join(td, "a.pdf"); open(f, "wb").write(data)
+        subprocess.run(["pdftotext", "-enc", "UTF-8", f, td + "/a.txt"], check=False)
+        t = open(td + "/a.txt", encoding="utf-8", errors="replace").read()
+    muc = sorted(set(re.findall(r"\b(6-1-13\d\d(?:\.\d+)?)\.", t)))
+    print(f"3) kiểm: {len(t):,} ký tự · {len(muc)} mục thuộc phần 13")
+    print(f"   {', '.join(muc)}")
+    if len(muc) < 10:
+        print("   ⚠ ít mục bất thường — xem lại trước khi nạp vào Pi")
+    print("\n   Kho đang giữ 15 mục (CRS 2024). Khác con số này nghĩa là Colorado đã sửa luật.")
 
-    json.dump(LOG, open(os.path.join(OUT, "_log_actions.json"), "w"), ensure_ascii=False, indent=1)
-    ok = sum(1 for x in LOG if x["ok"])
-    print(f"\n>>> XONG: {ok}/{len(LOG)} lượt tải thành công → {OUT}")
+    json.dump({"nam": nam_moi, "url": url_pdf, "n_muc": len(muc), "muc": muc},
+              open(os.path.join(OUT, "_co_crs.json"), "w"), ensure_ascii=False, indent=1)
+    print("\n>>> XONG. Tải artifact 'state-raw' → trên Mac giải nén → raw_to_pi.py → "
+          "load_luatqt.py us_states3 → embed_dieu_qt.py")
 
 
 if __name__ == "__main__":
