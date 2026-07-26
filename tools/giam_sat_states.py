@@ -36,7 +36,7 @@ CÁCH DÙNG (Actions tự chạy, không cần ai bấm):
 Mốc chuẩn nằm ở tools/us_state_moc.json — CHỈ LÀ SIÊU DỮ LIỆU (số mục + md5), không phải
 dữ liệu luật, nên commit vào repo không phạm nguyên tắc "repo không lưu data".
 """
-import urllib.request, ssl, os, re, json, sys, hashlib, time, signal
+import urllib.request, ssl, os, re, json, sys, hashlib, time, signal, html
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MOC = os.path.join(HERE, "us_state_moc.json")
@@ -64,6 +64,8 @@ BANG = [
   ], "kho lấy từ HTML xuất Word của chương này"),
  ("US-CT-CTDPA", "Connecticut CTDPA — CGS ch. 743jj", [
    ("https://www.cga.ct.gov/current/pub/chap_743jj.htm", r"\b42-(5\d{2}[a-z]{0,2})\b"),
+   ("http://www.cga.ct.gov/current/pub/chap_743jj.htm", r"\b42-(5\d{2}[a-z]{0,2})\b"),
+   ("https://codes.findlaw.com/ct/title-42-sales-and-notices/", r"\b42-(5\d{2}[a-z]{0,2})\b"),
   ], "cùng trang kho đã tải"),
  ("US-NH-DPA", "New Hampshire — RSA 507-H", [
    ("https://www.gencourt.state.nh.us/rsa/html/LII/507-H/507-H-mrg.htm", r"\b507-H:(\d+)\b"),
@@ -82,25 +84,34 @@ BANG = [
   ], "kho lấy từ PDF SB 227 (ĐÓNG BĂNG) → canh chương pháp điển"),
  ("US-KY-CDPA", "Kentucky CDPA — KRS 367.3611–3629", [
    ("https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092", r"\b367\.(36\d{2})\b"),
-  ], "kho lấy từng mục PDF; canh mục lục chương"),
+  ], "kho lấy từng mục PDF; canh mục lục chương — ⚠ mục lục chỉ in DẢI '367.3611 … 367.3629' "
+     "nên chỉ bắt được 2 số: bắt được thêm/bớt ở HAI ĐẦU dải, không thấy chèn mục ở giữa"),
  ("US-MT-CDPA", "Montana CDPA — MCA 30-14-28", [
-   ("https://archive.legmt.gov/bills/mca/title_0300/chapter_0140/part_0280/parts_index.html",
+   ("https://archive.legmt.gov/bills/mca/title_0300/chapter_0140/part_0280/sections_index.html",
     r"\b30-14-28(\d{2})\b"),
-   ("https://law.justia.com/codes/montana/title-30/chapter-14/part-28/", r"\b30-14-28(\d{2})\b"),
+   ("https://leg.mt.gov/bills/mca/title_0300/chapter_0140/part_0280/sections_index.html",
+    r"\b30-14-28(\d{2})\b"),
+   ("https://codes.findlaw.com/mt/title-30-trade-and-commerce/", r"\b30-14-28(\d{2})\b"),
   ], "kho lấy từng mục; canh mục lục phần 28"),
  ("US-NJ-DPA", "New Jersey DPA — NJSA 56:8-166.4 et seq.", [
    ("https://law.njstate.gov/", r"56:8-166\.(\d+)"),
    ("https://njlaw.rutgers.edu/collections/njstats/showsect.php?title=56&chapter=8&section=166.4&actn=getsect",
     r"56:8-166\.(\d+)"),
-   ("https://pub.njleg.state.nj.us/Bills/2022/PL23/266_.PDF", r"56:8-166\.(\d+)"),
+   ("https://codes.findlaw.com/nj/title-56-trade-names-marks-and-unfair-trade-practices/",
+    r"56:8-166\.(\d+)"),
+   ("http://njlaw.rutgers.edu/collections/njstats/showsect.php?title=56&chapter=8&section=166.4&actn=getsect",
+    r"56:8-166\.(\d+)"),
   ], "kho lấy từ PDF P.L.2023 c.266 (ĐÓNG BĂNG) → cần bản pháp điển mới thấy sửa đổi"),
  ("US-TN-TIPA", "Tennessee TIPA — TCA 47-18-32", [
+   ("https://codes.findlaw.com/tn/title-47-commercial-instruments-and-transactions/",
+    r"\b47-18-32(\d{2})\b"),
    ("https://www.lexisnexis.com/hottopics/tncode/", r"\b47-18-32(\d{2})\b"),
    ("https://www.capitol.tn.gov/Bills/113/Bill/SB0073.pdf", r"\b47-18-32(\d{2})\b"),
   ], "kho lấy từ PDF SB0073 (ĐÓNG BĂNG) → cần bản pháp điển mới thấy sửa đổi"),
  ("US-CO-CPA", "Colorado CPA — CRS title 6 (part 13)", [
    ("https://leg.colorado.gov/agencies/office-legislative-legal-services/colorado-revised-statutes",
     r"crs(20\d{2})-title"),
+   ("https://codes.findlaw.com/co/title-6-consumer-and-commercial-affairs/", r"\b6-1-13(\d{2})\b"),
    ("https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf", r"\b6-1-13(\d{2})\b"),
   ], "kho lấy PDF CRS THEO NĂM → canh trang mục lục để biết có bản năm mới"),
 ]
@@ -127,16 +138,49 @@ def tai(url, timeout=25):
     try:
         with urllib.request.urlopen(urllib.request.Request(url, headers=h),
                                     timeout=timeout, context=CTX) as r:
-            return r.read()
+            return r.read(), r.headers.get("Content-Type", "")
     finally:
         signal.alarm(0)
 
 
-def van_ban_thuan(data: bytes) -> str:
-    t = data.decode("utf-8", "replace")
+def giai_ma(data: bytes, ct: str = "") -> str:
+    """⚠ KHÔNG được decode('utf-8') bừa. Vòng chạy đầu trên Actions: Texas trả về 250 KB,
+    Colorado 58 KB — trang về ĐỦ mà ra 0 mục. Đó không phải cổng chặn, mà là mình đọc sai
+    bảng mã: nhiều cổng bang xuất HTML theo UTF-16 (có BOM) hoặc windows-1252. Decode UTF-16
+    bằng utf-8 thì mỗi chữ số bị chèn NUL ở giữa ('5\x004\x001') → regex số mục không bao giờ
+    khớp, mà nhìn số byte lại tưởng lấy được.
+    Dấu hiệu nhận ra: byte lớn + 0 mục + text đầy ký tự thay thế."""
+    if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return data.decode("utf-16", "replace")
+    m = re.search(r"charset=([\w-]+)", ct or "", re.I)
+    thu = [m.group(1)] if m else []
+    thu += ["utf-8", "windows-1252", "latin-1"]
+    for enc in thu:
+        try:
+            t = data.decode(enc)
+            if t.count("\x00") < len(t) // 20:      # còn nhiều NUL là đoán sai bảng mã
+                return t
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return data.decode("utf-8", "replace")
+
+
+def van_ban_thuan(data: bytes, ct: str = "") -> str:
+    t = giai_ma(data, ct)
     t = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", t)
     t = re.sub(r"<[^>]+>", " ", t)
-    return re.sub(r"\s+", " ", t).strip()
+    t = html.unescape(t)                             # &nbsp; &sect; … thành ký tự thật
+    return re.sub(r"[\s\u00a0]+", " ", t).strip()
+
+
+def chan_doan(url, data, txt):
+    """In mẫu để LẦN SAU KHỎI ĐOÁN. Cổng bang mỗi nơi một kiểu; thay vì ngồi suy luận
+    regex sai ở đâu, để runner ở Mỹ tự kể lại nó thấy gì."""
+    so = sorted(set(re.findall(r"\b\d{1,3}[-.:]\d{1,4}[A-Za-z]?\b", txt)))
+    print(f"      ↳ chẩn đoán {url[:60]}")
+    print(f"        {len(data):,}B · {len(txt):,} ký tự sau khi bóc thẻ")
+    print(f"        đầu trang: {txt[:180]!r}")
+    print(f"        số dạng điều luật thấy được ({len(so)}): {', '.join(so[:25])}")
 
 
 def do_mot_bang(ma, ten, ung_vien, ghi_chu, url_uu_tien=None):
@@ -151,16 +195,19 @@ def do_mot_bang(ma, ten, ung_vien, ghi_chu, url_uu_tien=None):
     loi = []
     for url, re_muc in ds:
         try:
-            data = tai(url)
+            data, ct = tai(url)
         except QuaGio:
             loi.append(f"{url[:48]}… quá {HAN_GIO}s"); continue
+        except urllib.error.HTTPError as e:
+            loi.append(f"{url[:48]}… HTTP {e.code}"); continue      # mã lỗi nói rõ hơn tên lớp
         except Exception as e:
-            loi.append(f"{url[:48]}… {type(e).__name__}"); continue
-        txt = van_ban_thuan(data)
+            loi.append(f"{url[:48]}… {type(e).__name__}: {str(e)[:40]}"); continue
+        txt = van_ban_thuan(data, ct)
         muc = sorted(set(re.findall(re_muc, txt)), key=lambda s: (len(s), s))
         if not muc:
-            # 200 nhưng không có số mục → vỏ SPA / trang chặn. KHÔNG phải "luật bị xoá".
-            loi.append(f"{url[:48]}… lấy được {len(data)}B nhưng 0 mục"); continue
+            # 200 nhưng không có số mục → vỏ SPA / trang chặn / sai regex. KHÔNG phải "luật bị xoá".
+            loi.append(f"{url[:48]}… lấy được {len(data)}B nhưng 0 mục")
+            chan_doan(url, data, txt); continue
         return {"ma": ma, "tt": "ok", "n_muc": len(muc), "muc": muc,
                 "vt_muc": hashlib.md5(",".join(muc).encode()).hexdigest()[:16],
                 "n_ky_tu": len(txt), "url": url}

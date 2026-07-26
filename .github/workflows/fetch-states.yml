@@ -22,8 +22,9 @@ on:
     - cron: '0 12 1 * *'
   push:
     paths:
-      - 'tools/**'          # mọi script tải, không riêng fetch_states
-                            # (sửa fetch_indiana.py mà lọc theo fetch_states thì không chạy)
+      - 'tools/fetch_*.py'  # CHỈ script TẢI mới cần chạy lại job fetch.
+                            # Trước để 'tools/**': sửa script giám sát cũng kích hoạt job tải
+                            # nặng (Kentucky dò thưa mấy phút) hoàn toàn vô ích.
 
 permissions:
   contents: read
