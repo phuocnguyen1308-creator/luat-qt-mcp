@@ -19,7 +19,7 @@
    "589"
   ],
   "vt_muc": "4d42369c5b232f6f",
-  "n_ky_tu": 616111,
+  "n_ky_tu": 592001,
   "url": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html"
  },
  "US-NH-DPA": {
@@ -39,7 +39,7 @@
    "12"
   ],
   "vt_muc": "0530d7873aa47a45",
-  "n_ky_tu": 49245,
+  "n_ky_tu": 48957,
   "url": "https://www.gencourt.state.nh.us/rsa/html/LII/507-H/507-H-mrg.htm"
  },
  "US-RI-DTPPA": {
@@ -57,7 +57,7 @@
    "10"
   ],
   "vt_muc": "6c2274983ce1ac0f",
-  "n_ky_tu": 850,
+  "n_ky_tu": 750,
   "url": "http://webserver.rilegislature.gov/Statutes/TITLE6/6-48.1/INDEX.htm"
  },
  "US-NE-DPA": {
@@ -95,7 +95,7 @@
    "1130"
   ],
   "vt_muc": "edfcab246671ac16",
-  "n_ky_tu": 14853,
+  "n_ky_tu": 14849,
   "url": "https://nebraskalegislature.gov/laws/browse-chapters.php?chapter=87"
  },
  "US-KY-CDPA": {
@@ -107,5 +107,32 @@
   "vt_muc": "c7f2c5344ba12bbd",
   "n_ky_tu": 30118,
   "url": "https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092"
+ },
+ "US-MT-CDPA": {
+  "n_muc": 19,
+  "muc": [
+   "01",
+   "02",
+   "03",
+   "04",
+   "05",
+   "07",
+   "08",
+   "09",
+   "10",
+   "11",
+   "12",
+   "13",
+   "14",
+   "15",
+   "16",
+   "17",
+   "18",
+   "19",
+   "20"
+  ],
+  "vt_muc": "fa3ee523415a63bd",
+  "n_ky_tu": 1297,
+  "url": "https://archive.legmt.gov/bills/mca/title_0300/chapter_0140/part_0280/sections_index.html"
  }
 }
