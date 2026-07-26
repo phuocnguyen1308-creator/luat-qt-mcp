@@ -47,6 +47,12 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
 NGUONG_DAI = 0.02        # lệch độ dài dưới 2% coi là banner/ngày tháng, không phải luật
 
+# ⚠ TĂNG SỐ NÀY MỖI KHI SỬA van_ban_thuan()/giai_ma().
+# Bài học từ vòng chạy thứ hai: vừa thêm gỡ &nbsp; và dò bảng mã là OR nhảy 3,9%, RI nhảy
+# 11,8% — báo "nghi sửa nội dung" trong khi luật không đụng gì. Mốc chuẩn chỉ so được với
+# CHÍNH bộ chuẩn hoá đã tạo ra nó; khác phiên bản thì phải ghi mốc lại, không được đem so.
+PHIEN_BAN_CHUAN_HOA = 3
+
 # (mã, tên, [ứng viên (URL, regex số mục)…], ghi chú)
 # ⚠ VÌ SAO NHIỀU ỨNG VIÊN CHỨ KHÔNG MỘT URL: thử từ VN cho thấy mỗi cổng chặn một kiểu
 #   (403 bot, timeout geo, SSL hỏng, connection refused) và KHÔNG suy ra được cổng nào sẽ
@@ -57,6 +63,7 @@ NGUONG_DAI = 0.02        # lệch độ dài dưới 2% coi là banner/ngày th�
 BANG = [
  ("US-TX-DPSA", "Texas DPSA — Bus. & Com. Code ch. 541", [
    ("https://statutes.capitol.texas.gov/Docs/BC/htm/BC.541.htm", r"\b541\.(\d{3})\b"),
+   ("https://statutes.capitol.texas.gov/Docs/BC/pdf/BC.541.pdf", r"\b541\.(\d{3})\b"),
    ("https://statutes.capitol.texas.gov/SOTWDocs/BC/htm/BC.541.htm", r"\b541\.(\d{3})\b"),
   ], "kho lấy từ PDF dự luật HB4 → canh chương pháp điển"),
  ("US-OR-OCPA", "Oregon OCPA — ORS 646A.570–589", [
@@ -81,6 +88,7 @@ BANG = [
  ("US-UT-UCPA", "Utah UCPA — Utah Code 13-61", [
    ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html", r"\b13-61-([0-9]{3})\b"),
    ("https://le.utah.gov/xcode/Title13/Chapter61/13-61.html?print=on", r"\b13-61-([0-9]{3})\b"),
+   ("https://le.utah.gov/xcode/Title13/Chapter61/C13-61.pdf", r"\b13-61-([0-9]{3})\b"),
   ], "kho lấy từ PDF SB 227 (ĐÓNG BĂNG) → canh chương pháp điển"),
  ("US-KY-CDPA", "Kentucky CDPA — KRS 367.3611–3629", [
    ("https://apps.legislature.ky.gov/law/statutes/chapter.aspx?id=39092", r"\b367\.(36\d{2})\b"),
@@ -101,6 +109,7 @@ BANG = [
     r"56:8-166\.(\d+)"),
    ("http://njlaw.rutgers.edu/collections/njstats/showsect.php?title=56&chapter=8&section=166.4&actn=getsect",
     r"56:8-166\.(\d+)"),
+   ("https://njlaw.rutgers.edu/collections/njstats/", r"56:8-166\.(\d+)"),
   ], "kho lấy từ PDF P.L.2023 c.266 (ĐÓNG BĂNG) → cần bản pháp điển mới thấy sửa đổi"),
  ("US-TN-TIPA", "Tennessee TIPA — TCA 47-18-32", [
    ("https://codes.findlaw.com/tn/title-47-commercial-instruments-and-transactions/",
@@ -124,6 +133,17 @@ class QuaGio(Exception):
     pass
 
 
+# Vài cổng bang dựng chuỗi chứng chỉ thiếu mắt xích trung gian → Python báo
+# CERTIFICATE_VERIFY_FAILED trong khi trình duyệt vẫn vào được (trình duyệt tự đi tìm mắt
+# xích thiếu, Python thì không). Ở đây ta CHỈ ĐỌC mục lục công khai và chỉ so cấu trúc số
+# mục, không gửi đi thông tin gì, nên nới kiểm chứng cho đúng những host này là chấp nhận
+# được. Không mở đại trà.
+HOST_NOI_TLS = {"www.cga.ct.gov", "cga.ct.gov"}
+CTX_LONG = ssl.create_default_context()
+CTX_LONG.check_hostname = False
+CTX_LONG.verify_mode = ssl.CERT_NONE
+
+
 def tai(url, timeout=25):
     """⚠ timeout của urlopen chỉ tính cho MỖI thao tác socket, không phải cả lượt tải.
 
@@ -136,8 +156,10 @@ def tai(url, timeout=25):
     signal.signal(signal.SIGALRM, lambda *_: (_ for _ in ()).throw(QuaGio()))
     signal.alarm(HAN_GIO)
     try:
+        from urllib.parse import urlparse
+        ctx = CTX_LONG if urlparse(url).hostname in HOST_NOI_TLS else CTX
         with urllib.request.urlopen(urllib.request.Request(url, headers=h),
-                                    timeout=timeout, context=CTX) as r:
+                                    timeout=timeout, context=ctx) as r:
             return r.read(), r.headers.get("Content-Type", "")
     finally:
         signal.alarm(0)
@@ -165,7 +187,27 @@ def giai_ma(data: bytes, ct: str = "") -> str:
     return data.decode("utf-8", "replace")
 
 
+def pdf_ra_chu(data: bytes) -> str:
+    """PDF phải rút chữ bằng pdftotext. Vòng chạy trước bóc thẻ HTML thẳng trên byte PDF nên
+    chỉ thấy '%PDF-1.7 %µµµµ' rồi kết luận '0 mục' — nhìn thì giống bị chặn, thực ra là mình
+    đọc sai định dạng. Runner phải cài poppler-utils (đã thêm vào workflow)."""
+    import subprocess, tempfile
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            f = os.path.join(td, "a.pdf"); open(f, "wb").write(data)
+            subprocess.run(["pdftotext", "-enc", "UTF-8", f, td + "/a.txt"],
+                           check=False, capture_output=True, timeout=120)
+            return open(td + "/a.txt", encoding="utf-8", errors="replace").read()
+    except FileNotFoundError:
+        print("      ⚠ máy không có pdftotext — bỏ qua ứng viên PDF")
+        return ""
+    except Exception:
+        return ""
+
+
 def van_ban_thuan(data: bytes, ct: str = "") -> str:
+    if data[:4] == b"%PDF":
+        return re.sub(r"[\s\u00a0]+", " ", pdf_ra_chu(data)).strip()
     t = giai_ma(data, ct)
     t = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", t)
     t = re.sub(r"<[^>]+>", " ", t)
@@ -204,6 +246,14 @@ def do_mot_bang(ma, ten, ung_vien, ghi_chu, url_uu_tien=None):
             loi.append(f"{url[:48]}… {type(e).__name__}: {str(e)[:40]}"); continue
         txt = van_ban_thuan(data, ct)
         muc = sorted(set(re.findall(re_muc, txt)), key=lambda s: (len(s), s))
+        if not muc and data[:4] != b"%PDF":
+            # ⚠ Có bang để số hiệu trong ĐƯỜNG DẪN chứ không trong chữ hiển thị (Colorado:
+            #   'crs2025-title-06.pdf' nằm trong href). Bóc thẻ xong là mất sạch. Vớt lại
+            #   bằng cách khớp trên HTML thô — chỉ khi bản đã bóc không ra gì, để khỏi
+            #   nhặt nhầm rác trong script.
+            muc = sorted(set(re.findall(re_muc, giai_ma(data, ct))), key=lambda s: (len(s), s))
+            if muc:
+                print(f"      ↳ {ma}: số mục nằm trong HTML thô (href), không có trong chữ hiển thị")
         if not muc:
             # 200 nhưng không có số mục → vỏ SPA / trang chặn / sai regex. KHÔNG phải "luật bị xoá".
             loi.append(f"{url[:48]}… lấy được {len(data)}B nhưng 0 mục")
@@ -216,6 +266,12 @@ def do_mot_bang(ma, ten, ung_vien, ghi_chu, url_uu_tien=None):
 
 def main():
     moc = json.load(open(MOC, encoding="utf-8")) if os.path.exists(MOC) else {}
+    pb_cu = moc.pop("_phien_ban_chuan_hoa", 0) if isinstance(moc, dict) else 0
+    if moc and pb_cu != PHIEN_BAN_CHUAN_HOA:
+        print(f"⚠ Mốc chuẩn tạo bằng bộ chuẩn hoá phiên bản {pb_cu}, nay là {PHIEN_BAN_CHUAN_HOA}.")
+        print("  → KHÔNG đem so (số ký tự sẽ lệch vì cách bóc chữ đổi, không phải luật sửa).")
+        print("  → Chạy lại với --moc để chốt mốc mới.\n")
+        moc = {}
     kq, doi, hong = {}, [], []
     print(f"Giám sát {len(BANG)} bang Mỹ (nguồn raw_file, không canh được từ Pi)\n" + "─" * 72)
 
@@ -256,9 +312,10 @@ def main():
     json.dump(kq, open(BAO_CAO, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
     if GHI_MOC:
-        json.dump({k: {x: v[x] for x in ("n_muc", "muc", "vt_muc", "n_ky_tu", "url") if x in v}
-                   for k, v in kq.items() if v["tt"] == "ok"},
-                  open(MOC, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        ra = {"_phien_ban_chuan_hoa": PHIEN_BAN_CHUAN_HOA}
+        ra.update({k: {x: v[x] for x in ("n_muc", "muc", "vt_muc", "n_ky_tu", "url") if x in v}
+                   for k, v in kq.items() if v["tt"] == "ok"})
+        json.dump(ra, open(MOC, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         print(f"\n>>> Đã ghi mốc chuẩn: {MOC}  ({sum(1 for v in kq.values() if v['tt']=='ok')} bang)")
         return
 

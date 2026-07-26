@@ -44,6 +44,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      # Vài bang chỉ còn nguồn PDF (Texas nay là SPA, Colorado phát hành CRS theo PDF năm).
+      # Thiếu pdftotext là script đọc byte PDF như HTML → '0 mục', trông hệt như bị chặn.
+      - name: Cài poppler-utils (pdftotext)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+
       - name: Soi 12 cổng bang so với mốc chuẩn
         # KHÔNG continue-on-error: script cố tình exit 1 khi phát hiện luật đổi,
         # để job đỏ và GitHub gửi mail — đó chính là cái chuông báo.
