@@ -1,5 +1,42 @@
 {
  "_phien_ban_chuan_hoa": 3,
+ "US-TX-DPSA": {
+  "n_muc": 28,
+  "muc": [
+   "001",
+   "002",
+   "003",
+   "004",
+   "005",
+   "051",
+   "052",
+   "053",
+   "054",
+   "055",
+   "101",
+   "102",
+   "103",
+   "104",
+   "105",
+   "106",
+   "107",
+   "151",
+   "152",
+   "153",
+   "154",
+   "155",
+   "156",
+   "201",
+   "202",
+   "203",
+   "204",
+   "205"
+  ],
+  "vt_muc": "f83d7a35757f7e87",
+  "n_ky_tu": 53654,
+  "url": "https://statutes.capitol.texas.gov/Docs/BC/htm/BC.541.htm",
+  "cach": "js"
+ },
  "US-OR-OCPA": {
   "n_muc": 15,
   "muc": [
@@ -193,7 +230,7 @@
    "6"
   ],
   "vt_muc": "4522e52d94f655e3",
-  "n_ky_tu": 13774,
+  "n_ky_tu": 12979,
   "url": "https://law.justia.com/codes/new-jersey/title-56/section-56-8-166-4/",
   "cach": "js"
  },
