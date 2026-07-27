@@ -223,9 +223,14 @@ def _rrf(danh_sach, k0=60):
 def tim_ngu_nghia(cau_hoi: str, gioi_han: int = 8,
                   jurisdiction: str = None, topic: str = None) -> dict:
     """Tìm theo NGỮ NGHĨA — hiểu ý kể cả không trùng từ khóa. Hybrid vector(e5)+FTS gộp RRF.
-    QUAN TRỌNG: kho tiếng Anh, model nhúng nhỏ → hãy diễn đạt câu hỏi bằng THUẬT NGỮ PHÁP LÝ
-    TIẾNG ANH (vd 'right to erasure', 'data breach notification'). Hỏi tiếng Việt trên text
-    tiếng Anh cho kết quả mỏng/kém tin.
+    NGÔN NGỮ — đo thực tế 27/07/2026 (cùng tiếng 0,93 · Anh→Nhật 0,82 · Việt→Nhật 0,81):
+      • Phần lớn kho là tiếng Anh → hỏi bằng THUẬT NGỮ PHÁP LÝ TIẾNG ANH cho kết quả tốt nhất.
+      • Kho CÒN CÓ văn bản tiếng Nhật, Đức, Pháp, Tây Ban Nha, Bồ Đào Nha, Ả Rập. Model bắc
+        cầu được nhưng YẾU HƠN nhiễu cùng ngôn ngữ, nên khi hỏi tiếng Anh mà muốn tìm trong
+        các nước đó thì PHẢI đặt jurisdiction (vd jurisdiction='JP'); không đặt thì kết quả
+        tiếng Anh sẽ lấn át.
+      • Chắc ăn nhất: hỏi bằng chính NGÔN NGỮ CỦA VĂN BẢN (vd '外国にある第三者への提供' cho
+        luật Nhật). Với tiếng Nhật, dùng cụm danh từ liền mạch giống tiêu đề điều.
     Lọc tùy chọn jurisdiction/topic. LẤY RỘNG rồi tự lọc: đọc 'trich_doan', giữ cái đúng ngữ cảnh.
     Mở toàn văn bằng xem_dieu(article_key)."""
     gioi_han = max(1, min(int(gioi_han), 20))
@@ -238,11 +243,22 @@ def tim_ngu_nghia(cau_hoi: str, gioi_han: int = 8,
         return {"error": f"Không gọi được service nhúng ({e}).",
                 "goi_y": "Kiểm tra service e5 trên Pi (:8899), hoặc dùng tra_dieu (full-text)."}
     # 1) Vector: 120 đoạn gần nhất, gom theo điều giữ đoạn khớp nhất
-    chunks = query("""
-        SELECT ref_id, doan, 1 - (embedding <=> %s::vector) AS sim
-        FROM doc_embeddings WHERE nguon = 'dieu_qt'
-        ORDER BY embedding <=> %s::vector LIMIT 120
-    """, (vec, vec))
+    # ⚠ ĐIỀU KIỆN LỌC PHẢI NẰM TRONG TRUY VẤN, KHÔNG ĐƯỢC LỌC SAU.
+    #   Bản cũ cắt top-120 trên TOÀN KHO rồi mới lọc jurisdiction ở bước 4. Hậu quả đo được
+    #   ngày 27/07/2026: câu hỏi tiếng Anh + jurisdiction='JP' trả về 0 kết quả, vì 120 chỗ
+    #   đó bị văn bản tiếng Anh chiếm sạch — điều Nhật ĐÚNG đạt sim 0,82 còn điều tiếng Anh
+    #   KHÔNG liên quan đạt 0,85. Lọc xong thì rỗng.
+    #   Đây không phải giới hạn của model: e5-small bắc cầu được (Anh→Nhật 0,816, Việt→Nhật
+    #   0,806, cùng tiếng 0,932). Chỉ là lọc đặt sai chỗ. Lọc sau top-K luôn bỏ đói tập con
+    #   nhỏ — và mọi nền tài phán không nói tiếng Anh đều là tập con nhỏ ở kho này.
+    vcond, vextra = _loc(jurisdiction, topic, "d")
+    chunks = query(f"""
+        SELECT e.ref_id, e.doan, 1 - (e.embedding <=> %s::vector) AS sim
+        FROM doc_embeddings e
+        JOIN dieu_qt d ON d.article_key = e.ref_id
+        WHERE e.nguon = 'dieu_qt'{vcond}
+        ORDER BY e.embedding <=> %s::vector LIMIT 120
+    """, tuple([vec] + vextra + [vec]))
     if not chunks:
         return {"tong_so": 0, "ket_qua": [], "goi_y": "Kho chưa có vector — dùng tra_dieu."}
     best = {}
