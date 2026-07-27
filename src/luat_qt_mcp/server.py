@@ -2,124 +2,108 @@
 """MCP server "luat-qt": tra cứu PHÁP LUẬT QUỐC TẾ toàn văn trong PostgreSQL (luatqt_db).
 Hiện có EU (EUR-Lex); đang mở rộng UK/US/CH/UAE... Điều lấy trực tiếp từ văn bản gốc,
 khóa ổn định do cơ quan cấp (CELEX + eId). Tra full-text + ngữ nghĩa (e5) gộp bằng RRF."""
-import os, json, urllib.request
+import os, re, json, urllib.request
 from mcp.server.fastmcp import FastMCP
 from .db import query
 
 # ─────────────────── SỔ TAY TƯ DUY cho MỌI AI dùng connector này ───────────────────
-_HUONG_DAN = """\
-Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn. Hiện có:
-  • EU (EUR-Lex): GDPR, AI Act, NIS2, Cyber Resilience Act, DSA, DMA, EECC, ePrivacy, LED
-  • Thụy Sĩ (fedlex): FADP (Luật bảo vệ dữ liệu) + Data Protection Ordinance
-  • Singapore (SSO): PDPA · Cybersecurity Act · Computer Misuse · Telecom/Electronic Transactions/Spam Control
-  • Ireland (eISB): Data Protection Act 2018
-  • Anh (legislation.gov.uk): DPA 2018 · Data (Use and Access) Act 2025 · PECR 2003
-  • Canada (justice laws): PIPEDA · Privacy Act · Telecommunications Act
-  • New Zealand (legislation.govt.nz): Privacy Act 2020 · Telecom Act 2001 · Harmful Digital Comms 2015
-  • Úc (legislation.gov.au): Privacy Act 1988 · Online Safety Act 2021 · Critical Infrastructure 2018
-  • Đức (gesetze-im-internet.de): BDSG · TTDSG · TKG · BSIG · DDG · NetzDG · LuftVO — ⚠ TIẾNG ĐỨC
-  • Tây Ban Nha (BOE): LOPDGDD · LSSI — ⚠ TIẾNG TÂY BAN NHA
-  • Chile (leychile/BCN): Ley 19.628 (vida privada) — ⚠ TIẾNG TÂY BAN NHA
-  • Brazil (planalto): LGPD (Lei 13.709/2018) · Marco Civil da Internet — ⚠ TIẾNG BỒ ĐÀO NHA
-  • Pháp (DILA/LEGI, ✅bản hợp nhất): Loi 78-17 Informatique et Libertés · LCEN 2004-575 ·
-    Code pénal (226-16→226-24 dữ liệu cá nhân, 323-* tội phạm tin học) · Code des postes et
-    communications électroniques (L32–L34) — ⚠ TIẾNG PHÁP
-  • UAE 3 tầng: LIÊN BANG 'AE' = PDPL (Nghị định-luật 45/2021) — ⚠ TIẾNG Ả RẬP (bản chính thức
-    duy nhất) · free zone tài chính 'AE-ADGM' = ADGM DP Regulations 2021, 'AE-DIFC' = DIFC DP
-    Law 5/2020 — tiếng Anh, ✅ BẢN HỢP NHẤT
-  • Mỹ – LUẬT BANG (18/20 bang có luật privacy toàn diện): 'US-CA' California CCPA/CPRA ·
-    'US-VA' Virginia CDPA · 'US-CO' Colorado Privacy Act · 'US-CT' Connecticut CTDPA ·
-    'US-TX' Texas DPSA · 'US-OR' Oregon Consumer Privacy Act · 'US-NJ' New Jersey DPA ·
-    'US-TN' Tennessee TIPA · 'US-FL' Florida Digital Bill of Rights · 'US-MT' Montana CDPA ·
-    'US-NH' New Hampshire DPA · 'US-RI' Rhode Island DTPPA · 'US-DE' Delaware DPDPA ·
-    'US-IA' Iowa CDPA · 'US-MN' Minnesota CDPA · 'US-MD' Maryland MODPA ·
-    'US-NE' Nebraska DPA · 'US-UT' Utah UCPA · 'US-KY' Kentucky CDPA
-    ⚠ CHƯA có 1 bang: IN (Indiana, IC 24-15, hiệu lực 01/01/2026). Thiếu ≠ không có luật.
-    ⚠ Kiểm date_in_force với hôm nay: RI 01/01/2026 · MD 01/10/2025 · TN 01/07/2025 ·
-      MN 31/07/2025 — có luật vừa mới áp dụng.
-  • Mỹ – LIÊN BANG, 3 TẦNG (jurisdiction='US'), lọc bằng doc_type:
-      - doc_type='act' — 20 đạo luật (U.S. Code): CFAA · ECPA Wiretap + Stored Communications ·
-        Privacy Act 1974 · FOIA · HIPAA · FCRA · FERPA · FISA · Pen/Trap · DPPA · COPPA ·
-        GLBA-Privacy · CAN-SPAM · CPNI · TCPA · CDA 230 · FISMA · CALEA
-      - doc_type='regulation' — QUY ĐỊNH (eCFR, ✅bản hợp nhất): COPPA Rule 16 CFR 312 ·
-        GLBA Safeguards 16 CFR 314 · HIPAA Rules 45 CFR 164 · DOJ Bulk Data 28 CFR 202 ·
-        FCC 47 CFR 64
-      - doc_type='executive_order' — SẮC LỆNH: EO 14117 (dữ liệu nhạy cảm ra nước ngoài) ·
-        14086 (tình báo tín hiệu, nền EU-US DPF) · 14179 + 14365 (AI)
-      - doc_type='case_law' — ÁN LỆ Tòa Tối cao (PDF chính thức supremecourt.gov), mỗi bản án
-        cắt thành nhiều ĐOẠN: Carpenter 2018 (dữ liệu vị trí ĐT cần lệnh khám) · Van Buren 2021
-        (thu hẹp 'exceeds authorized access' của CFAA) · TransUnion 2021 (tư cách khởi kiện khi
-        vi phạm dữ liệu) · Facebook v. Duguid 2021 (định nghĩa autodialer, TCPA) ·
-        Moody v. NetChoice 2024 (quản lý nền tảng vs Tu chính án 1)
-đang mở rộng UAE/Pháp... Mỗi điều lấy trực tiếp từ văn bản gốc chính thức, khóa ổn định do cơ quan cấp
-(EU: CELEX; CH/IE: ELI; SG/CA/NZ/AU/DE: số điều; UK: pid CLML; US: bang=số mục Code, LB=Title+§; article_key=doc_id+điều).
-Chủ đề gồm cả UAV/Drone (EU/AU/CA/SG/UK) ngoài privacy/ai/cyber/telecom.
-LUÔN suy nghĩ chủ động về HIỆU LỰC & NGÔN NGỮ:
-
-1. KIỂM NGÀY HIỆU LỰC vs HÔM NAY. Mỗi văn bản có date_in_force + status. Có luật ĐÃ ban
-   hành nhưng CHƯA tới ngày áp dụng (vd Cyber Resilience Act hiệu lực 2027-12-11) — chưa
-   tới ngày thì KHÔNG dùng làm căn cứ hiện hành. status='repealed' = đã bị bãi bỏ.
-
-2. KẾT QUẢ LÀ BẢN NGUYÊN VĂN BAN HÀNH (consolidated=false), KHÔNG phải bản hợp nhất. Luật
-   EU thường có bản HỢP NHẤT riêng đã gộp các lần sửa; với trích dẫn quan trọng, đối chiếu
-   bản consolidated trên nguồn chính thức (mở source_url → EUR-Lex).
-
-3. TRA CÙNG NGÔN NGỮ VỚI CORPUS cho kết quả SẮC NHẤT. Kho lưu bằng TIẾNG ANH. Model nhúng
-   nhỏ (e5-small) YẾU khi hỏi tiếng Việt trên text tiếng Anh — hãy DIỄN ĐẠT CÂU HỎI BẰNG
-   THUẬT NGỮ PHÁP LÝ TIẾNG ANH trước khi tim_ngu_nghia (vd 'quyền được xóa dữ liệu' →
-   'right to erasure right to be forgotten'). Bạn (AI) song ngữ, tự dịch ý sang tiếng corpus.
-   ⚠ THỤY SĨ: bản tiếng Anh là DỊCH KHÔNG CHÍNH THỨC; văn bản có hiệu lực pháp lý là
-   tiếng Đức/Pháp/Ý. Trích dẫn quan trọng phải dẫn bản DE/FR/IT trên fedlex (source_url).
-   ⚠ ĐỨC (DE) / TÂY BAN NHA (ES): lưu bằng TIẾNG ĐỨC / TIẾNG TÂY BAN NHA (chính thức, không có
-   bản EN). Tra sắc nhất bằng thuật ngữ pháp lý đúng tiếng đó (DE: 'Auskunftsrecht',
-   'personenbezogene Daten'; ES: 'datos personales', 'derecho de acceso'); hỏi Anh/Việt thì tự
-   dịch ý sang tiếng corpus trước khi tim_ngu_nghia.
-
-4. HAI CÁCH TRA: tra_dieu (full-text — chính xác thuật ngữ/số điều, nhanh) và tim_ngu_nghia
-   (ngữ nghĩa — cho câu mô tả). Truy vấn đã đúng thuật ngữ tiếng Anh thì tra_dieu thường đủ.
-
-5. XUYÊN QUỐC GIA: cùng khái niệm mỗi hệ một thuật ngữ ('personal data' EU ↔ 'personal
-   information' US). Khi so sánh nhiều nước, lọc theo jurisdiction/topic và nêu rõ mỗi bên
-   gọi tên gì. Thiếu một nước trong kho ≠ nước đó không có luật — chỉ là chưa nạp.
-   ⚠ UAE phân tầng — PHẢI nói rõ đang dẫn tầng nào: 'AE' = PDPL LIÊN BANG (áp dụng toàn UAE,
-   trừ free zone có luật riêng); 'AE-ADGM'/'AE-DIFC' = hai free zone tài chính, mỗi zone là hệ
-   pháp luật riêng kiểu common law, KHÔNG áp dụng cho phần còn lại của UAE. Đừng dùng ADGM/DIFC
-   để trả lời câu hỏi về "luật UAE" nói chung.
-   ⚠ PDPL lưu bằng TIẾNG Ả RẬP (bản chính thức duy nhất — u.ae không phát hành bản EN). Tra sắc
-   nhất bằng thuật ngữ Ả Rập ('البيانات الشخصية' dữ liệu cá nhân, 'المتحكم' bên kiểm soát,
-   'انتهاك البيانات' vi phạm dữ liệu). Lưu ý PDF gốc bị lỗi rời chữ nhẹ khi trích (ví dụ
-   'الإبلاغ' có thể thành 'اإلبالغ') — vector vẫn khớp tốt, nhưng khi TRÍCH DẪN nguyên văn cho
-   người dùng thì nên đối chiếu source_url.
-   ⚠ MỸ phân mảnh — KHÔNG có luật privacy LIÊN BANG toàn diện. Khi user hỏi "luật bảo vệ dữ liệu
-   của Mỹ", nêu rõ sự phân mảnh, đừng ngầm coi có một đạo luật chung. Ba điều PHẢI nhớ:
-   (a) NGHĨA VỤ TUÂN THỦ THỰC TẾ thường nằm ở QUY ĐỊNH (doc_type='regulation'), không phải luật
-       gốc. Hỏi "phải làm gì để tuân thủ COPPA/HIPAA" → trả lời từ 16 CFR 312 / 45 CFR 164, rồi
-       mới dẫn luật gốc. Trả lời chỉ bằng U.S. Code là THIẾU phần hành động cụ thể.
-   (b) TẦNG SẮC LỆNH (doc_type='executive_order') đổi theo nhiệm kỳ và đang là nơi biến động
-       mạnh nhất — luôn kiểm date_document. Vd EO 14110 (AI, Biden) đã bị bãi bỏ và thay bằng
-       EO 14179 (2025); EO 14365 (12/2025) hạn chế luật AI cấp bang. Kho chỉ giữ EO còn hiệu lực.
-   (c) LUẬT BANG mới là nơi có luật privacy tổng quát. Kho hiện CHỈ có California ('US-CA',
-       CCPA/CPRA) trong khi thực tế đã có ~20 bang. Thiếu một bang trong kho ≠ bang đó không có
-       luật — phải nói rõ giới hạn này thay vì kết luận.
-   (d) ÁN LỆ (doc_type='case_law'): với câu hỏi mà kết quả phụ thuộc cách TÒA hiểu luật, PHẢI
-       tra án lệ chứ đừng chỉ đọc điều luật — vd phạm vi CFAA đọc theo Van Buren, không đọc
-       nguyên văn §1030. Kho mới có 5 bản án hiện đại; các án cũ (Katz 1967, Smith 1979,
-       Riley 2014, Spokeo 2016) CHƯA có vì Tòa đã gỡ bản slip, nên đừng khẳng định "không có
-       án lệ về X". Mỗi bản án lưu thành nhiều đoạn (nhan='đoạn N'), tieu_de cho biết đang đọc
-       Syllabus hay ý kiến đa số/phản đối — ⚠ ý kiến PHẢN ĐỐI (dissenting) KHÔNG phải luật.
-
-6. Trích dẫn LUÔN kèm doc_id (CELEX) + số điều + ngày để người dùng tự kiểm trên nguồn chính thức.
-
-7. HỎI VỀ "CẢNH BÁO / THAY ĐỔI / CẦN CHÚ Ý" pháp lý → GỌI THẲNG xem_canh_bao NGAY, đừng hỏi lại
-   người dùng lĩnh vực nào (tool trả toàn bộ kho: thay đổi gần đây + văn bản sắp áp dụng). Nếu
-   muốn lọc thì tự lọc kết quả theo jurisdiction/topic, không bắt người dùng làm rõ trước.
+# ⚠ TỪ 0.27.0: HƯỚNG DẪN và DANH MỤC KHO nằm trong DATABASE, không nằm trong mã.
+#   Lý do: bản trước liệt kê cứng từng nước từng luật, và nó ĐÃ SAI — vẫn ghi "18/20 bang"
+#   sau khi nạp đủ 20, vẫn ghi "kho hiện CHỈ có California" khi đã có 20 bang, không có Nhật
+#   Bản. Mỗi lần nạp thêm nước là một lần phải phát hành lại và bắt mọi người CÀI LẠI.
+#   Nay: bảng `huong_dan` giữ phần tư duy (sửa được bằng SQL), danh mục SINH TỪ KHO lúc khởi
+#   động. Thêm nước/nhóm → chỉ cần KHỞI ĐỘNG LẠI Claude, không cài lại.
+#   Mọi truy vấn dưới đây đều bọc try/except: kho không với tới được thì connector vẫn chạy
+#   và báo lỗi tử tế, thay vì chết lúc nạp module.
+_MAC_DINH = """\
+Connector "luat-qt": kho pháp luật QUỐC TẾ toàn văn (PostgreSQL + tra ngữ nghĩa e5).
+⚠ Không đọc được bảng hướng dẫn trong kho — đây là bản rút gọn:
+1. KIỂM date_in_force vs HÔM NAY. Có luật đã ban hành nhưng CHƯA tới ngày áp dụng;
+   status='repealed' = đã bị bãi bỏ.
+2. Kết quả thường là NGUYÊN VĂN BAN HÀNH, không phải bản hợp nhất — đối chiếu source_url.
+3. Phần lớn kho là tiếng Anh, nhưng CÒN CÓ tiếng Nhật/Đức/Pháp/Tây Ban Nha/Bồ/Ả Rập.
+   Hỏi tiếng Anh mà muốn tìm trong các nước đó thì PHẢI đặt jurisdiction, không thì kết quả
+   tiếng Anh lấn át. Chắc ăn nhất: hỏi bằng chính ngôn ngữ của văn bản.
+4. Thiếu một nước trong kho ≠ nước đó không có luật — chỉ là chưa nạp. Phải nói rõ giới hạn.
+5. Trích dẫn LUÔN kèm doc_id + số điều + ngày để người dùng tự kiểm trên nguồn chính thức.
+Gọi thong_ke() để biết kho hiện có gì.
 """
+
+
+def _hd_tu_kho(muc="connector"):
+    try:
+        r = query("SELECT noi_dung FROM huong_dan WHERE muc=%s", (muc,))
+        return r[0]["noi_dung"] if r else None
+    except Exception:
+        return None
+
+
+def _danh_muc_song():
+    """Danh mục SINH TỪ KHO — không bao giờ lệch với dữ liệu thật.
+
+    Đi qua view `van_ban_topic` nên văn bản mang nhiều chủ đề hiện ở đủ các nhóm.
+    Tự nêu cảnh báo ngôn ngữ cho nước không phải tiếng Anh, vì đó là thứ quyết định
+    cách đặt câu hỏi (đo 27/07/2026: cùng tiếng 0,93 · Anh→Nhật 0,82).
+    """
+    try:
+        rows = query("""SELECT v.jurisdiction AS j, t.topic AS tp,
+                               count(*) AS n, coalesce(sum(v.n_dieu), 0) AS d,
+                               string_agg(DISTINCT v.lang, '/') AS langs
+                        FROM van_ban_qt v JOIN van_ban_topic t ON t.doc_id = v.doc_id
+                        GROUP BY 1, 2 ORDER BY 1, 2""")
+    except Exception:
+        return ""
+    if not rows:
+        return ""
+    theo = {}
+    for r in rows:
+        theo.setdefault(r["j"], []).append(r)
+    out = ["", "KHO HIỆN CÓ (đọc thẳng từ database lúc khởi động, luôn khớp dữ liệu thật):"]
+    for j in sorted(theo):
+        muc = theo[j]
+        langs = sorted({l for r in muc for l in (r["langs"] or "").split("/") if l})
+        canh = "" if langs == ["EN"] else "   ⚠ " + "/".join(langs)
+        out.append("  {}: {}{}".format(
+            j, " · ".join("{} {}vb/{}đ".format(r["tp"], r["n"], r["d"]) for r in muc), canh))
+    out.append("⚠ Nước KHÔNG có trong danh sách trên = CHƯA NẠP, không phải không có luật.")
+    return "\n".join(out)
+
+
+_HUONG_DAN = (_hd_tu_kho() or _MAC_DINH) + _danh_muc_song()
 
 mcp = FastMCP("luat-qt", instructions=_HUONG_DAN)
 
-# Trọng số ts_rank_cd theo hạng D,C,B,A. search_vector dựng bằng config 'simple' (đa ngôn ngữ).
-_RANK_W = "'{0.1, 0.2, 0.4, 1.0}'"
-NGUONG_DIEM = 0.02   # điểm cao nhất dưới mức này = khớp rải rác → cảnh báo
+
+def _cau_hinh():
+    """Hằng số điều chỉnh lấy từ bảng `cau_hinh`; thiếu thì dùng mặc định trong mã.
+
+    Nhờ vậy tinh chỉnh ngưỡng / số ứng viên KHÔNG cần phát hành lại connector.
+    ⚠ `rank_w` được nội suy THẲNG vào SQL nên phải kiểm dạng trước khi dùng — chỉ nhận
+      chữ số, dấu phẩy, dấu chấm, ngoặc nhọn và nháy đơn. Giá trị lạ thì bỏ, dùng mặc định.
+    """
+    c = {"rank_w": "'{0.1, 0.2, 0.4, 1.0}'", "nguong_diem": "0.02",
+         "ung_vien_vector": "120", "ung_vien_fts": "60", "rrf_trong_so_fts": "0.5"}
+    try:
+        for r in query("SELECT khoa, gia_tri FROM cau_hinh"):
+            k, v = r["khoa"], (r["gia_tri"] or "").strip()
+            if k not in c or not v:
+                continue
+            if k == "rank_w" and not re.fullmatch(r"'\{[\d.,\s]+\}'", v):
+                continue
+            if k != "rank_w" and not re.fullmatch(r"[\d.]+", v):
+                continue
+            c[k] = v
+    except Exception:
+        pass
+    return c
+
+
+_CH = _cau_hinh()
+_RANK_W = _CH["rank_w"]
+NGUONG_DIEM = float(_CH["nguong_diem"])
+_UNG_VIEN_VECTOR = int(_CH["ung_vien_vector"])
+_UNG_VIEN_FTS = int(_CH["ung_vien_fts"])
+_RRF_FTS = float(_CH["rrf_trong_so_fts"])
 
 E5_URL = os.environ.get("E5_URL", "http://100.85.147.69:8899")
 
@@ -132,14 +116,28 @@ def _shape(rows, offset):
             "con_nua": offset + len(rows) < total, "ket_qua": rows}
 
 
-def _loc(jurisdiction, topic, alias=""):
-    """Trả (mệnh_đề_SQL, params) cho bộ lọc jurisdiction/topic tùy chọn."""
+def _loc(jurisdiction, topic, alias="", cap="dieu"):
+    """Trả (mệnh_đề_SQL, params) cho bộ lọc jurisdiction/topic tùy chọn.
+
+    ⚠ Lọc topic đi qua VIEW `dieu_topic` / `van_ban_topic`, KHÔNG so thẳng cột `topic`.
+      Cột đó chỉ chứa MỘT giá trị, mà một điều luật có thể thuộc nhiều nhóm: Điều 2 EECC
+      vừa là `telecom` (định nghĩa nền của bộ luật viễn thông EU) vừa là `ott` (nơi định
+      nghĩa 'number-independent interpersonal communications service'). View hợp nhất chủ
+      đề chính (từ bảng gốc) với chủ đề phụ chọn tay (`*_topic_them`).
+      View chứ không phải bảng dẫn xuất — luôn đồng bộ theo cấu tạo, không có chỗ trôi lệch.
+    """
     p, a = "", (alias + "." if alias else "")
     params = []
     if jurisdiction:
         p += f" AND {a}jurisdiction = %s"; params.append(jurisdiction)
     if topic:
-        p += f" AND {a}topic = %s"; params.append(topic)
+        if cap == "van_ban":
+            p += (f" AND EXISTS (SELECT 1 FROM van_ban_topic vt"
+                  f" WHERE vt.doc_id = {a}doc_id AND vt.topic = %s)")
+        else:
+            p += (f" AND EXISTS (SELECT 1 FROM dieu_topic dt"
+                  f" WHERE dt.article_key = {a}article_key AND dt.topic = %s)")
+        params.append(topic)
     return p, params
 
 
@@ -257,7 +255,7 @@ def tim_ngu_nghia(cau_hoi: str, gioi_han: int = 8,
         FROM doc_embeddings e
         JOIN dieu_qt d ON d.article_key = e.ref_id
         WHERE e.nguon = 'dieu_qt'{vcond}
-        ORDER BY e.embedding <=> %s::vector LIMIT 120
+        ORDER BY e.embedding <=> %s::vector LIMIT {_UNG_VIEN_VECTOR}
     """, tuple([vec] + vextra + [vec]))
     if not chunks:
         return {"tong_so": 0, "ket_qua": [], "goi_y": "Kho chưa có vector — dùng tra_dieu."}
@@ -273,9 +271,12 @@ def tim_ngu_nghia(cau_hoi: str, gioi_han: int = 8,
                     plainto_tsquery('simple', unaccent(%s))) AS diem
                     FROM dieu_qt d
                     WHERE d.search_vector @@ plainto_tsquery('simple', unaccent(%s)){fcond}
-                    ORDER BY diem DESC LIMIT 60""", tuple([cau_hoi, cau_hoi] + fextra))
+                    ORDER BY diem DESC LIMIT {_UNG_VIEN_FTS}""", tuple([cau_hoi, cau_hoi] + fextra))
     # 3) RRF gộp
-    ranked = _rrf([(vec_order, 1.0), ([r["k"] for r in fts][:25], 0.5)])
+    # Số ứng viên và trọng số lấy từ bảng `cau_hinh` — tinh chỉnh bằng SQL,
+    # không phải bằng một lần phát hành connector.
+    ranked = _rrf([(vec_order, 1.0),
+                   ([r["k"] for r in fts][:max(1, _UNG_VIEN_FTS // 2)], _RRF_FTS)])
     # 4) metadata cho toàn bộ ứng viên, rồi lọc jurisdiction/topic + cắt gioi_han
     if not ranked:
         return {"tong_so": 0, "ket_qua": [], "goi_y": "Thử tra_dieu với thuật ngữ cụ thể."}
@@ -291,8 +292,10 @@ def tim_ngu_nghia(cau_hoi: str, gioi_han: int = 8,
             continue
         if jurisdiction and m["jurisdiction"] != jurisdiction:
             continue
-        if topic and m["topic"] != topic:
-            continue
+        # ⚠ ĐÃ BỎ lọc lại theo m["topic"]. Cả hai nhánh (vector + FTS) nay đã lọc topic ngay
+        #   trong SQL qua view `dieu_topic`, nên lọc lại ở đây là thừa — và SAI: nó so với
+        #   CHỦ ĐỀ CHÍNH trong cột `topic`, nên mọi điều khớp nhờ CHỦ ĐỀ PHỤ sẽ bị vứt.
+        #   Hỏi topic='ott' sẽ trả rỗng dù SQL vừa tìm đúng Điều 2 EECC.
         sim = best.get(k, (None, None))
         kq.append({"article_key": k, "doc_id": m["doc_id"], "jurisdiction": m["jurisdiction"],
                    "topic": m["topic"], "nhan": m["nhan"], "tieu_de": m["tieu_de"],
@@ -315,7 +318,7 @@ def tra_van_ban(tu_khoa: str = None, jurisdiction: str = None, topic: str = None
     """Tìm/liệt kê VĂN BẢN (cấp tài liệu). Có tu_khoa → full-text trên tiêu đề+toàn văn;
     không tu_khoa → liệt kê theo jurisdiction/topic. Mỗi mục kèm ngày hiệu lực, tình trạng, số điều."""
     gioi_han = max(1, min(int(gioi_han), 100))
-    cond, extra = _loc(jurisdiction, topic, "v")
+    cond, extra = _loc(jurisdiction, topic, "v", cap="van_ban")
     if tu_khoa:
         params = [tu_khoa] + extra + [gioi_han]
         rows = query(f"""
@@ -358,8 +361,14 @@ def xem_van_ban(doc_id: str) -> dict:
 @mcp.tool()
 def thong_ke() -> dict:
     """Tổng quan kho: số văn bản & điều theo jurisdiction × topic, tổng vector đã nhúng."""
-    theo = query("""SELECT jurisdiction, topic, count(*) AS so_van_ban, sum(n_dieu) AS so_dieu
-                    FROM van_ban_qt GROUP BY 1,2 ORDER BY 1,2""")
+    # Đi qua view `van_ban_topic` để CHỦ ĐỀ PHỤ cũng hiện (vd EECC đếm ở cả telecom lẫn ott).
+    # ⚠ Vì vậy tổng cộng các dòng LỚN HƠN số văn bản thật — văn bản hai chủ đề được đếm hai
+    #   lần. Đó là con số đúng cho câu hỏi "nhóm này phủ tới đâu", nhưng đừng cộng dồn để suy
+    #   ra quy mô kho; dùng khối `tong` cho việc đó.
+    theo = query("""SELECT v.jurisdiction, t.topic,
+                           count(*) AS so_van_ban, sum(v.n_dieu) AS so_dieu
+                    FROM van_ban_qt v JOIN van_ban_topic t ON t.doc_id = v.doc_id
+                    GROUP BY 1,2 ORDER BY 1,2""")
     tong = query("""SELECT (SELECT count(*) FROM van_ban_qt) AS van_ban,
                            (SELECT count(*) FROM dieu_qt) AS dieu,
                            (SELECT count(*) FROM doc_embeddings WHERE nguon='dieu_qt') AS vector""")
@@ -396,7 +405,7 @@ def xem_canh_bao(so_ngay: int = 90) -> dict:
 @mcp.tool()
 def liet_ke(jurisdiction: str = None, topic: str = None) -> dict:
     """Danh mục văn bản (gọn) — lọc tùy chọn theo jurisdiction/topic. Kèm ngày hiệu lực + tình trạng."""
-    cond, extra = _loc(jurisdiction, topic, "v")
+    cond, extra = _loc(jurisdiction, topic, "v", cap="van_ban")
     rows = query(f"""SELECT v.doc_id, v.jurisdiction, v.topic, v.doc_type, v.title,
                             v.date_in_force::text AS date_in_force, v.status, v.n_dieu
                      FROM van_ban_qt v WHERE 1=1{cond}
