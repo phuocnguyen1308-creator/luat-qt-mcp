@@ -6,7 +6,15 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
-    "mcp>=1.2.0",
+    # ⚠ CHẶN TRÊN <2 LÀ BẮT BUỘC — đừng gỡ.
+    #   mcp 2.0.0 (phát hành ~28/07/2026) BỎ HẲN module `mcp.server.fastmcp`.
+    #   Kiểm chứng: 1.28.1 có mcp.server.fastmcp.FastMCP · 2.0.0 KHÔNG có
+    #   (mcp.server giờ là mcpserver/lowlevel/apps/...).
+    #   Vì `uvx --from git+...` giải lại phụ thuộc MỖI LẦN khởi động, thiếu chặn
+    #   trên là connector chết dù mã của ta không đổi một dòng — và chết ở MỌI
+    #   máy cùng lúc, kể cả máy Chloe.
+    #   Muốn lên 2.x thì phải viết lại theo API mới, không phải chỉ nới ràng buộc.
+    "mcp>=1.2.0,<2",
     "psycopg2-binary>=2.9",
 ]
 
